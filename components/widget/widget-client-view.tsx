@@ -1,0 +1,276 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { WidgetPreview } from "@/components/hendesk/widget-preview";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { updateWidgetConfigAction } from "@/app/actions/widget";
+import { toast } from "@/components/ui/toast";
+import {
+  Copy,
+  CheckCircle2,
+  Palette,
+  Sliders,
+  Code2,
+  Loader2
+} from "lucide-react";
+
+export function WidgetClientView({ 
+  initialConfig, 
+  workspaceId 
+}: { 
+  initialConfig: any;
+  workspaceId: string;
+}) {
+  const [title, setTitle] = useState(initialConfig.title);
+  const [greeting, setGreeting] = useState(initialConfig.greeting);
+  const [theme, setTheme] = useState(initialConfig.themeColor);
+  const [btn, setBtn] = useState(initialConfig.buttonColor);
+  const [position, setPosition] = useState<"right" | "left">(initialConfig.position);
+  const [proactive, setProactive] = useState(initialConfig.proactiveMessage);
+  const [avatarUrl] = useState(initialConfig.avatarUrl);
+  const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const res = await updateWidgetConfigAction({
+        title,
+        greeting,
+        themeColor: theme,
+        buttonColor: btn,
+        position,
+        proactiveMessage: proactive,
+      });
+      if (res.error) throw new Error(res.error);
+      toast.add({ title: "Success", description: "Widget settings saved", type: "success" });
+    } catch (err: any) {
+      toast.add({ title: "Save Failed", description: err.message, type: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const [origin, setOrigin] = useState("http://localhost:3000");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  const script = `<script src="${origin}/widget.js" data-helpdesk-workspace-id="${workspaceId}" defer></script>`;
+
+  return (
+    <div className="p-5 sm:p-8 lg:p-10 max-w-[1400px] mx-auto space-y-8 font-sans">
+      {/* Header Banner */}
+      <div>
+        <span className="text-[12px] font-bold uppercase tracking-[0.15em] text-brand bg-brand/8 px-3 py-1 rounded-full">
+          Embed &amp; Style
+        </span>
+        <h1 className="mt-2.5 text-[28px] sm:text-[36px] font-bold tracking-[-0.03em] leading-tight">
+          Widget <em className="font-display not-italic italic text-brand">Customization</em>
+        </h1>
+        <p className="mt-1 text-[14.5px] text-foreground/50">Customize colors, text, behavior, and install the AI chat widget on your site.</p>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_400px] gap-8 items-start">
+        {/* Left Column: Form Controls */}
+        <div className="space-y-6">
+          {/* Appearance Settings */}
+          <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-[17px] tracking-tight flex items-center gap-2">
+                  <Palette className="h-4.5 w-4.5 text-brand" /> Appearance &amp; Branding
+                </h3>
+                <p className="text-[12.5px] text-foreground/45 mt-0.5">Control how your chat widget looks to visitors</p>
+              </div>
+              <Button 
+                onClick={handleSave} 
+                disabled={isSaving}
+                className="h-10 px-5 rounded-xl bg-brand text-white hover:bg-brand/90 font-bold shadow-md shadow-brand/20 transition-all cursor-pointer shrink-0"
+              >
+                {isSaving ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-[13.5px] font-semibold">Widget Title</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 rounded-xl bg-background border-border/50 text-[14px]" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[13.5px] font-semibold">Greeting Message</Label>
+                <Input value={greeting} onChange={(e) => setGreeting(e.target.value)} className="h-11 rounded-xl bg-background border-border/50 text-[14px]" />
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[13.5px] font-semibold">Theme Color</Label>
+                  <div className="flex items-center gap-2">
+                    <Input type="color" value={theme} onChange={(e) => setTheme(e.target.value)} className="h-10 w-12 p-0.5 rounded-lg border-0 bg-transparent cursor-pointer" />
+                    <Input value={theme} onChange={(e) => setTheme(e.target.value)} className="h-10 rounded-xl bg-background border-border/50 text-[13px] font-mono" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13.5px] font-semibold">Button Color</Label>
+                  <div className="flex items-center gap-2">
+                    <Input type="color" value={btn} onChange={(e) => setBtn(e.target.value)} className="h-10 w-12 p-0.5 rounded-lg border-0 bg-transparent cursor-pointer" />
+                    <Input value={btn} onChange={(e) => setBtn(e.target.value)} className="h-10 rounded-xl bg-background border-border/50 text-[13px] font-mono" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[13.5px] font-semibold">Screen Position</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPosition("left")}
+                    className={`p-3.5 rounded-2xl border-2 text-left font-semibold text-[13.5px] transition-all cursor-pointer ${
+                      position === "left" ? "border-brand bg-brand/4 text-brand" : "border-border/50 bg-background text-foreground/70"
+                    }`}
+                  >
+                    Left Side
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPosition("right")}
+                    className={`p-3.5 rounded-2xl border-2 text-left font-semibold text-[13.5px] transition-all cursor-pointer ${
+                      position === "right" ? "border-brand bg-brand/4 text-brand" : "border-border/50 bg-background text-foreground/70"
+                    }`}
+                  >
+                    Right Side
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Behavior Settings */}
+          <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-5">
+            <div>
+              <h3 className="font-bold text-[17px] tracking-tight flex items-center gap-2">
+                <Sliders className="h-4.5 w-4.5 text-brand" /> Behavior &amp; Automation
+              </h3>
+              <p className="text-[12.5px] text-foreground/45 mt-0.5">Configure popups and widget behavior</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <Label className="text-[14px] font-semibold">Proactive Message</Label>
+                  <p className="text-[12.5px] text-foreground/45">Automatically open greeting after 8 seconds on page.</p>
+                </div>
+                <Switch checked={proactive} onCheckedChange={setProactive} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Live Clean Widget Preview */}
+        <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-md space-y-4 sticky top-24 flex flex-col items-center">
+          <div className="w-full flex items-center justify-between">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-foreground/40 flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald animate-pulse" /> Live Widget Preview
+            </span>
+            <span className="text-[11px] font-semibold text-brand bg-brand/10 px-2.5 py-0.5 rounded-full">Interactive</span>
+          </div>
+
+          <div className="w-full flex justify-center py-2">
+            <WidgetPreview
+              title={title}
+              greeting={greeting}
+              avatarUrl={avatarUrl}
+              themeColor={theme}
+              buttonColor={btn}
+              className="shadow-xl"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Installation Snippet Section */}
+      <div className="rounded-3xl border border-border/50 bg-card p-6 sm:p-8 shadow-2xs space-y-5">
+        <div>
+          <h3 className="font-bold text-[18px] tracking-tight flex items-center gap-2">
+            <Code2 className="h-5 w-5 text-brand" /> Embed &amp; Install Snippet
+          </h3>
+          <p className="text-[13.5px] text-foreground/50 mt-1">Paste this 1-line script snippet before the closing <code className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded">&lt;/body&gt;</code> tag on your website.</p>
+        </div>
+
+        <Tabs defaultValue="script" className="space-y-4">
+          <TabsList className="bg-[oklch(0.985_0.003_260)] border border-border/40 p-1 rounded-2xl h-11 w-fit gap-1">
+            <TabsTrigger value="script" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">Custom HTML</TabsTrigger>
+            <TabsTrigger value="wp" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">WordPress</TabsTrigger>
+            <TabsTrigger value="wix" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">Wix</TabsTrigger>
+            <TabsTrigger value="webflow" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">Webflow</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="script" className="outline-none">
+            <ScriptBlock script={script} copied={copied} onCopy={() => { navigator.clipboard?.writeText(script); setCopied(true); setTimeout(() => setCopied(false), 1500); }} />
+          </TabsContent>
+          <TabsContent value="wp" className="space-y-4 outline-none">
+            <div className="flex flex-col items-center justify-center py-6 text-center space-y-3 bg-muted/30 rounded-2xl border border-border/40">
+              <span className="text-[12px] font-bold uppercase tracking-[0.1em] text-brand bg-brand/10 px-3 py-1 rounded-full">Coming Soon</span>
+              <p className="text-[14px] text-foreground/70 max-w-sm mx-auto">We are currently developing a native WordPress plugin for seamless 1-click integration.</p>
+            </div>
+          </TabsContent>
+          <TabsContent value="wix" className="space-y-4 outline-none">
+            <div className="flex flex-col items-center justify-center py-6 text-center space-y-3 bg-muted/30 rounded-2xl border border-border/40">
+              <span className="text-[12px] font-bold uppercase tracking-[0.1em] text-brand bg-brand/10 px-3 py-1 rounded-full">Coming Soon</span>
+              <p className="text-[14px] text-foreground/70 max-w-sm mx-auto">Native Wix App integration is on the roadmap. For now, use the Custom HTML snippet in your Site Settings.</p>
+            </div>
+          </TabsContent>
+          <TabsContent value="webflow" className="space-y-4 outline-none">
+            <div className="flex flex-col items-center justify-center py-6 text-center space-y-3 bg-muted/30 rounded-2xl border border-border/40">
+              <span className="text-[12px] font-bold uppercase tracking-[0.1em] text-brand bg-brand/10 px-3 py-1 rounded-full">Coming Soon</span>
+              <p className="text-[14px] text-foreground/70 max-w-sm mx-auto">Webflow Marketplace app is under construction. Please use the Custom HTML method in your Head Code settings.</p>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Shadow DOM Architecture Info Cards */}
+      <div className="rounded-3xl border border-border/50 bg-card p-6 sm:p-8 shadow-2xs space-y-4">
+        <h3 className="font-bold text-[18px] tracking-tight">How the Widget Engine Works</h3>
+        <div className="grid md:grid-cols-3 gap-4">
+          {[
+            { t: "1. Async Script Loader", d: "widget.js loads asynchronously without blocking your page rendering speed." },
+            { t: "2. Shadow DOM Isolation", d: "Mounts inside a Shadow Root so site CSS styles never leak in or break the widget." },
+            { t: "3. Realtime Socket Engine", d: "Socket-powered chat panel ensures instant communication between visitor, AI, and human agent." },
+          ].map((s) => (
+            <div key={s.t} className="rounded-2xl border border-border/40 bg-[oklch(0.985_0.003_260)] p-4.5 space-y-1.5">
+              <div className="font-bold text-[14.5px] text-foreground">{s.t}</div>
+              <div className="text-[13px] text-foreground/50 leading-relaxed">{s.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScriptBlock({ script, copied, onCopy }: { script: string; copied: boolean; onCopy: () => void }) {
+  return (
+    <div className="relative rounded-2xl bg-[#0b1020] text-slate-100 font-mono text-[12.5px] p-5 overflow-x-auto leading-relaxed">
+      <button
+        className="absolute top-3 right-3 text-slate-100 bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 text-[12px] font-sans font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+        onClick={onCopy}
+      >
+        {copied ? <><CheckCircle2 className="h-4 w-4 text-emerald" /> Copied</> : <><Copy className="h-4 w-4" /> Copy Snippet</>}
+      </button>
+      <span className="break-all">{script}</span>
+    </div>
+  );
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acme Store — Live Embedded Widget Demo</title>
+  <!-- Google Fonts & Tailwind CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          colors: { brand: '#4f46e5', emerald: '#10b981' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans selection:bg-indigo-500/30">
+
+  <!-- Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 px-6 py-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="h-9 w-9 rounded-xl bg-indigo-600 grid place-items-center font-bold text-lg shadow-lg shadow-indigo-500/20">A</div>
+        <span class="font-bold text-xl tracking-tight">Acme Store</span>
+      </div>
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+        <a href="#features" class="hover:text-white transition-colors">Products</a>
+        <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+        <a href="#about" class="hover:text-white transition-colors">About Us</a>
+      </nav>
+      <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-5 py-2.5 rounded-full shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+        Shop Now
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="max-w-5xl mx-auto px-6 py-20 text-center space-y-8">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+      <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span> Live Embed Widget Testing Site
+    </div>
+
+    <h1 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight max-w-3xl mx-auto">
+      Experience Next-Gen Customer Support on <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Acme Store</span>
+    </h1>
+
+    <p class="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+      This is a sample customer website embedding our AI Helpdesk widget script in real-time. Look at the bottom-right corner to interact with your AI Agent!
+    </p>
+
+    <!-- Code Snippet Indicator Box -->
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 max-w-xl mx-auto text-left space-y-3 shadow-2xl">
+      <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+        <span>Installed Script Tag</span>
+        <span class="text-emerald-400 font-semibold">● Widget Active</span>
+      </div>
+      <pre class="bg-slate-900/90 p-4 rounded-xl text-xs font-mono text-indigo-300 overflow-x-auto border border-slate-800/80"><code>&lt;script src="http://localhost:3000/widget.js" 
+  data-helpdesk-workspace-id="ws_lw9bor" 
+  defer&gt;&lt;/script&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section id="features" class="max-w-6xl mx-auto px-6 py-16">
+    <h2 class="text-2xl font-bold text-center mb-12 text-slate-200">Featured Categories</h2>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
+        <div class="h-12 w-12 rounded-xl bg-indigo-500/10 text-indigo-400 grid place-items-center text-xl font-bold">⚡</div>
+        <h3 class="font-bold text-lg">Instant AI Answers</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">AI agent responds to product questions, shipping queries, and refunds within seconds.</p>
+      </div>
+
+      <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
+        <div class="h-12 w-12 rounded-xl bg-purple-500/10 text-purple-400 grid place-items-center text-xl font-bold">🛡️</div>
+        <h3 class="font-bold text-lg">Seamless Human Handoff</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">When questions are complex, the widget escalates to your active human agent team.</p>
+      </div>
+
+      <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors">
+        <div class="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-400 grid place-items-center text-xl font-bold">🎨</div>
+        <h3 class="font-bold text-lg">Custom Branding</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">Matches your website's exact brand colors, avatar, title, and position.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-8 text-center text-slate-500 text-xs">
+    © 2026 Acme Store Demo. Powered by Helpdesk AI Engine.
+  </footer>
+
+  <!-- ── 🤖 EMBEDDED CHAT WIDGET SNIPPET ── -->
+  <script src="http://localhost:3000/widget.js" data-workspace-id="ws_lw9bor" defer></script>
+</body>
+</html>

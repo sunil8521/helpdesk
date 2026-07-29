@@ -1,0 +1,52 @@
+import { cacheLife, cacheTag } from "next/cache";
+import { connectToDatabase } from "@/lib/db/connect";
+import { Workspace, IWorkspace } from "@/lib/db/models/Workspace";
+import { Agent, IAgent } from "@/lib/db/models/Agent";
+import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
+
+// 1. Uncached entry point (reads cookies)
+export async function getWorkspaceAndAgentSettings() {
+  const ctx = await resolveUserWorkspace();
+  if (!ctx) throw new Error("Unauthorized");
+
+  return fetchWorkspaceAndAgentCached(ctx.workspace._id.toString());
+}
+
+// 2. Cached data layer (takes string primitive, no request objects)
+async function fetchWorkspaceAndAgentCached(workspaceId: string) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(`settings-${workspaceId}`);
+
+  await connectToDatabase();
+
+  const [workspace, agent] = await Promise.all([
+    Workspace.findById(workspaceId).lean<IWorkspace>(),
+    Agent.findOne({ workspaceId }).lean<IAgent>(),
+  ]);
+
+  if (!workspace) throw new Error("Workspace not found");
+  if (!agent) throw new Error("Agent not found");
+
+  return {
+    workspace: {
+      id: workspace._id.toString(),
+      workspaceId: workspace.workspaceId,
+      name: workspace.name,
+      slug: workspace.slug,
+      plan: workspace.plan,
+    },
+    agent: {
+      id: agent._id.toString(),
+      name: agent.name,
+      role: agent.role,
+      description: agent.description,
+      tone: agent.tone,
+      responseLength: agent.responseLength,
+      aiModel: agent.aiModel,
+      temperature: agent.temperature,
+      confidenceThreshold: agent.confidenceThreshold,
+      humanFallbackBehavior: agent.humanFallbackBehavior,
+    },
+  };
+}
