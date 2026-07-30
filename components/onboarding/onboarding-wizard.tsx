@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import { finishOnboardingAction, checkKnowledgeSourceStatusAction } from "@/app/actions/onboarding";
+import { finishOnboardingAction } from "@/app/actions/onboarding";
+import {checkKnowledgeSourceStatusAction} from "@/app/actions/knowledge"
 import { KnowledgeIngestionForm } from "@/components/knowledge/knowledge-ingestion-form";
 import { cn } from "@/lib/utils";
 import { STEPS, AGENT_TEMPLATES, AVATAR_OPTIONS, COLOR_SWATCHES } from "./constants";

@@ -79,7 +79,7 @@ export function WidgetEmbedClient({ workspaceId, config, agent, ssoEmail, ssoNam
     }
   }, [isOpen, config?.position]);
 
-  
+
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -111,7 +111,7 @@ export function WidgetEmbedClient({ workspaceId, config, agent, ssoEmail, ssoNam
     } else {
       setMessages((prev) => [...prev, { sender: "system", text: "Failed to send message. Please try again." }]);
     }
-    
+
     setIsLoading(false);
   };
 
@@ -175,7 +175,7 @@ export function WidgetEmbedClient({ workspaceId, config, agent, ssoEmail, ssoNam
                       </div>
                     );
                   }
-                  
+
                   return m.sender === "ai" ? (
                     <div key={idx} className="flex justify-start">
                       <div className="max-w-[85%] rounded-2xl rounded-tl-xs bg-[oklch(0.975_0.003_260)] p-3 text-[12.5px] text-foreground leading-relaxed shadow-2xs">

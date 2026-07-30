@@ -40,3 +40,28 @@ export async function sendWorkspaceInviteEmail(input: {
     `,
   });
 }
+
+export async function sendPasswordResetEmail(email: string, code: string) {
+  await getTransporter().sendMail({
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: `Your Helpdesk Password Reset Code: ${code}`,
+    text: `Your password reset code is: ${code}. It expires in 15 minutes.`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 60px 20px; text-align: center;">
+        <div style="max-width: 460px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #f3f4f6;">
+          <h2 style="color: #111827; margin-top: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Password Reset Request</h2>
+          <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 16px 0 32px;">
+            We received a request to reset your password. Use the verification code below to complete the process.
+          </p>
+          <div style="background-color: #f3f4f6; padding: 16px 24px; border-radius: 8px; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #111827; display: inline-block;">
+            ${code}
+          </div>
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 32px; line-height: 1.5;">
+            This code will expire in 15 minutes. If you didn't request a password reset, you can safely ignore this email.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+}

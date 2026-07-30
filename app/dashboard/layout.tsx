@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 
 import { connectToDatabase } from "@/lib/db/connect";
-import { User } from "@/lib/db/models/User";
 import { Workspace } from "@/lib/db/models/Workspace";
 import { WorkspaceMember } from "@/lib/db/models/WorkspaceMember";
 import { StoreProvider } from "@/store/store-provider";
@@ -22,7 +21,6 @@ async function DashboardDataProvider({ children }: { children: React.ReactNode }
   await connectToDatabase();
 
   const userId = (session.user as any).id;
-  const userDoc = await User.findById(userId);
 
   // Query workspace membership for this user
   const memberDoc = await WorkspaceMember.findOne({ userId });
@@ -44,8 +42,8 @@ async function DashboardDataProvider({ children }: { children: React.ReactNode }
   const serializedUser = {
     id: userId,
     email: session.user.email as string,
-    name: session.user.name || userDoc?.name || "",
-    avatarUrl: session.user.image || userDoc?.avatarUrl || "",
+    name: session.user.name || "",
+    avatarUrl: session.user.image || "",
   };
 
   return (

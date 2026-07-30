@@ -103,14 +103,14 @@ export function KnowledgeClientView({ initialSources, workspaceId }: KnowledgeCl
           if (s && polled.status !== s.status) {
             changed = true;
             s.status = polled.status;
-            
+
             if (polled.status === "ready") {
               toast.add({
                 title: "Processing Complete",
                 description: `"${s.title}" is now ready!`,
                 type: "success",
               });
-            } else if (updated.status === "failed") {
+            } else if (polled.status === "failed") {
               toast.add({
                 title: "Processing Failed",
                 description: `Failed to process "${s.title}".`,
@@ -129,12 +129,6 @@ export function KnowledgeClientView({ initialSources, workspaceId }: KnowledgeCl
     return () => clearInterval(intervalId);
   }, [sources, router]);
 
-  const articles = [
-    { t: "How refunds work", c: "Billing", s: "Published", u: "Jul 12", content: "Annual plans include a 30-day money-back guarantee. After 30 days, refunds are prorated for the unused period of your subscription.\n\nMonthly plans are non-refundable, but you can cancel anytime and won't be charged again." },
-    { t: "Installing on WordPress", c: "Install", s: "Published", u: "Jul 10", content: "Install the Helpdesk plugin from the WordPress Admin plugin directory. Enter your Workspace ID (ws_9f8a2c) in Settings → Helpdesk to activate the live widget instantly." },
-    { t: "Data residency & privacy", c: "Security", s: "Draft", u: "Jul 09", content: "All workspace vectors and document chunks are isolated per tenant. Customer data is encrypted in transit (TLS 1.3) and at rest (AES-256)." },
-    { t: "Widget theming guide", c: "Widget", s: "Published", u: "Jul 07", content: "Customize widget primary colors, position, launcher icons, greeting messages, and avatar images in Dashboard → Widget." },
-  ];
 
   // Filtering logic
   const filteredSources = sources.filter((s) => {
@@ -229,8 +223,7 @@ export function KnowledgeClientView({ initialSources, workspaceId }: KnowledgeCl
       const res = await deleteKnowledgeSourceAction(id);
       if (res.error) throw new Error(res.error);
 
-      if (selectedSource?._id === id) setSelectedSource(null);
-      toast.add({ title: "Source Deleted", description: `"${name}" and all associated vectors removed.`, type: "info" });
+      toast.add({ title: "Source Deleted", description: `"${name}" and all associated vector chunks removed.`, type: "info" });
       router.refresh();
     } catch (err: any) {
       toast.add({ title: "Delete Error", description: err?.message || "Failed to delete source.", type: "error" });
@@ -262,25 +255,22 @@ export function KnowledgeClientView({ initialSources, workspaceId }: KnowledgeCl
           <div className="flex items-center bg-muted p-1 rounded-xl text-[12.5px] font-semibold w-fit">
             <button
               onClick={() => setActiveAddTab("url")}
-              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeAddTab === "url" ? "bg-background shadow-xs text-brand" : "text-foreground/60 hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeAddTab === "url" ? "bg-background shadow-xs text-brand" : "text-foreground/60 hover:text-foreground"
+                }`}
             >
               <Globe className="h-3.5 w-3.5" /> Crawl URL
             </button>
             <button
               onClick={() => setActiveAddTab("text")}
-              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeAddTab === "text" ? "bg-background shadow-xs text-brand" : "text-foreground/60 hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeAddTab === "text" ? "bg-background shadow-xs text-brand" : "text-foreground/60 hover:text-foreground"
+                }`}
             >
               <FileText className="h-3.5 w-3.5" /> Paste Text
             </button>
             <button
               onClick={() => setActiveAddTab("file")}
-              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeAddTab === "file" ? "bg-background shadow-xs text-brand" : "text-foreground/60 hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeAddTab === "file" ? "bg-background shadow-xs text-brand" : "text-foreground/60 hover:text-foreground"
+                }`}
             >
               <UploadCloud className="h-3.5 w-3.5" /> Upload File
             </button>
@@ -423,92 +413,92 @@ export function KnowledgeClientView({ initialSources, workspaceId }: KnowledgeCl
           </div>
         </div>
 
-          {/* Table Container */}
-          <div className="rounded-3xl border border-border/50 bg-card overflow-hidden shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13.5px]">
-                <thead className="bg-[oklch(0.985_0.003_260)] text-[11.5px] uppercase tracking-wider text-foreground/40 font-semibold border-b border-border/40">
+        {/* Table Container */}
+        <div className="rounded-3xl border border-border/50 bg-card overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13.5px]">
+              <thead className="bg-[oklch(0.985_0.003_260)] text-[11.5px] uppercase tracking-wider text-foreground/40 font-semibold border-b border-border/40">
+                <tr>
+                  <th className="text-left font-semibold px-6 py-3.5">Source Name</th>
+                  <th className="text-left font-semibold px-6 py-3.5">Type</th>
+                  <th className="text-left font-semibold px-6 py-3.5">Status</th>
+                  <th className="text-left font-semibold px-6 py-3.5">Chunks</th>
+                  <th className="text-left font-semibold px-6 py-3.5">Date</th>
+                  <th className="text-right font-semibold px-6 py-3.5">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {filteredSources.length === 0 ? (
                   <tr>
-                    <th className="text-left font-semibold px-6 py-3.5">Source Name</th>
-                    <th className="text-left font-semibold px-6 py-3.5">Type</th>
-                    <th className="text-left font-semibold px-6 py-3.5">Status</th>
-                    <th className="text-left font-semibold px-6 py-3.5">Chunks</th>
-                    <th className="text-left font-semibold px-6 py-3.5">Date</th>
-                    <th className="text-right font-semibold px-6 py-3.5">Actions</th>
+                    <td colSpan={6} className="px-6 py-12 text-center text-foreground/40">
+                      No knowledge sources found in database matching your filters.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
-                  {filteredSources.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-foreground/40">
-                        No knowledge sources found in database matching your filters.
+                ) : (
+                  filteredSources.map((s) => (
+                    <tr key={s._id} className="hover:bg-foreground/[0.02] transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-brand/8 text-brand grid place-items-center shrink-0">
+                            {s.sourceType === "file" && <FileText className="h-4.5 w-4.5" />}
+                            {s.sourceType === "url" && <Globe className="h-4.5 w-4.5 text-amber" />}
+                            {s.sourceType === "text" && <Sparkles className="h-4.5 w-4.5 text-emerald" />}
+                          </div>
+                          <div className="min-w-0 max-w-xs sm:max-w-md">
+                            <div className="font-bold text-foreground truncate">{s.title}</div>
+                            {s.webUrl && (
+                              <a
+                                href={s.webUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[12px] text-brand hover:underline flex items-center gap-1 mt-0.5 truncate"
+                              >
+                                {s.webUrl} <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted text-foreground/70">
+                          {s.sourceType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge status={s.status} />
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-foreground">{s.chunksCount || "—"}</td>
+                      <td className="px-6 py-4 text-foreground/40 font-medium text-[12.5px]">
+                        {new Date(s.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedSource(s)}
+                            className="h-8 px-2.5 rounded-lg text-foreground/70 hover:text-foreground text-[12px] font-semibold cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" /> View Details
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteSource(s._id, s.title)}
+                            className="h-8 px-2.5 rounded-lg text-red-600 hover:bg-red-500/10 text-[12px] font-semibold cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
-                  ) : (
-                    filteredSources.map((s) => (
-                      <tr key={s._id} className="hover:bg-foreground/[0.02] transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-xl bg-brand/8 text-brand grid place-items-center shrink-0">
-                              {s.sourceType === "file" && <FileText className="h-4.5 w-4.5" />}
-                              {s.sourceType === "url" && <Globe className="h-4.5 w-4.5 text-amber" />}
-                              {s.sourceType === "text" && <Sparkles className="h-4.5 w-4.5 text-emerald" />}
-                            </div>
-                            <div className="min-w-0 max-w-xs sm:max-w-md">
-                              <div className="font-bold text-foreground truncate">{s.title}</div>
-                              {s.webUrl && (
-                                <a
-                                  href={s.webUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[12px] text-brand hover:underline flex items-center gap-1 mt-0.5 truncate"
-                                >
-                                  {s.webUrl} <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted text-foreground/70">
-                            {s.sourceType}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <StatusBadge status={s.status} />
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-foreground">{s.chunksCount || "—"}</td>
-                        <td className="px-6 py-4 text-foreground/40 font-medium text-[12.5px]">
-                          {new Date(s.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setSelectedSource(s)}
-                              className="h-8 px-2.5 rounded-lg text-foreground/70 hover:text-foreground text-[12px] font-semibold cursor-pointer"
-                            >
-                              <Eye className="h-3.5 w-3.5 mr-1" /> View Details
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteSource(s._id, s.title)}
-                              className="h-8 px-2.5 rounded-lg text-red-600 hover:bg-red-500/10 text-[12px] font-semibold cursor-pointer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+      </div>
 
 
 

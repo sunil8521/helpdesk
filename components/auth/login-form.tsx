@@ -91,9 +91,9 @@ export function LoginForm() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-[13.5px] font-semibold">Password</Label>
-            <a href="#" className="text-[12px] font-semibold text-brand hover:underline">
+            <Link href="/forgot-password" className="text-[12px] font-semibold text-brand hover:underline">
               Forgot password?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <Lock className="absolute left-3.5 top-3 h-4 w-4 text-foreground/35" />

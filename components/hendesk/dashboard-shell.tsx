@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { HelpdeskLogo } from "@/components/hendesk/logo";
+import { UserProfileDropdown } from "@/components/hendesk/user-profile-dropdown";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
@@ -164,45 +164,12 @@ export function DashboardShell({ children }: { children?: ReactNode }) {
             </button>
 
             {/* Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="rounded-full ring-2 ring-transparent hover:ring-brand/30 transition-all outline-none cursor-pointer">
-                <Avatar className="h-9.5 w-9.5 border border-border/60 shadow-2xs">
-                  {userAvatar && <AvatarImage src={userAvatar} alt={userName} />}
-                  <AvatarFallback className="bg-brand/10 text-brand font-bold text-[12px]">{userInitials}</AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 rounded-2xl p-1.5 shadow-xl border-border/60">
-                <DropdownMenuLabel>
-                  <div className="font-bold text-[13.5px]">{userName}</div>
-                  <div className="text-[11px] text-foreground/40 font-normal truncate">{userEmail}</div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem className="rounded-xl cursor-pointer text-[13px]">
-                  <Link href="/dashboard" className="w-full">Dashboard Overview</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-xl cursor-pointer text-[13px]">
-                  <Link href="/dashboard/settings" className="w-full">Workspace Settings</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="rounded-xl cursor-pointer text-[13px] text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Logout Header Button */}
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              title="Log out"
-              className="h-9.5 px-3 rounded-full bg-card border border-border/50 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-foreground/70 flex items-center gap-1.5 text-[12.5px] font-semibold transition-colors shadow-2xs cursor-pointer ml-1"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </button>
+            <UserProfileDropdown 
+              userName={userName}
+              userEmail={userEmail}
+              avatarUrl={userAvatar}
+              userInitials={userInitials}
+            />
           </div>
         </header>
 

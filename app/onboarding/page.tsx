@@ -54,6 +54,7 @@ export default async function OnboardingPage() {
             {/* User Avatar, Name & Log out Button */}
             <UserHeaderSection
               userName={userName}
+              userEmail={session.user.email as string}
               avatarUrl={avatarUrl}
               userInitials={userInitials}
             />

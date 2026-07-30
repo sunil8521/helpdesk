@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { StatusBadge } from "@/components/hendesk/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,7 @@ export function TeamClientView({ members, workspaceName }: TeamClientViewProps) 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
-    
+
     setError("");
     setIsLoading(true);
 
@@ -150,13 +151,14 @@ export function TeamClientView({ members, workspaceName }: TeamClientViewProps) 
                 <tr key={m.id} className="hover:bg-foreground/[0.02] transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-brand/10 text-brand font-bold text-[12px] grid place-items-center shrink-0 overflow-hidden">
-                        {m.avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.avatarUrl} alt={m.name || "Member"} className="h-full w-full object-cover" />
-                        ) : (
-                          (m.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")
-                        )}
+                      <div className="h-9 w-9 bg-slate-100 shrink-0 overflow-hidden relative border border-border/40">
+                        <Image
+                          src={m.avatarUrl!}
+                          alt={"Profile_Picture"}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
                       </div>
                       <span className="font-bold text-foreground">{m.name}</span>
                     </div>

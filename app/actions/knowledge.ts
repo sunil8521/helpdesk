@@ -48,22 +48,27 @@ export async function createKnowledgeSourceAction(data: {
 
   const source = await KnowledgeSource.create(sourceData);
 
-  if (data.type === "url") {
-    await inngest.send({
-      name: "knowledge/process-url",
-      data: {
-        sourceId: source._id.toString(),
-        workspaceId: ctx.workspaceId,
-      },
-    });
-  } else {
-    await inngest.send({
-      name: "knowledge/process-source",
-      data: {
-        sourceId: source._id.toString(),
-        workspaceId: ctx.workspaceId,
-      },
-    });
+  try {
+    if (data.type === "url") {
+      await inngest.send({
+        name: "knowledge/process-url",
+        data: {
+          sourceId: source._id.toString(),
+          workspaceId: ctx.workspaceId,
+        },
+      });
+    } else {
+      await inngest.send({
+        name: "knowledge/process-source",
+        data: {
+          sourceId: source._id.toString(),
+          workspaceId: ctx.workspaceId,
+        },
+      });
+    }
+  } catch (err: any) {
+    console.error("Inngest queue error:", err);
+    return { error: "Failed to queue background job. Please ensure Inngest dev server is running." };
   }
 
   // NEXT 16 API: Forces an immediate, synchronous update for the dashboard
@@ -128,7 +133,16 @@ export async function deleteKnowledgeSourceAction(sourceId: string) {
   try {
     await client.connect();
     const collection = client.db("helpdesk").collection("vectors");
-    await collection.deleteMany({ "metadata.sourceId": sourceId });
+    // await collection.deleteMany({ "metadata.sourceId": sourceId });
+
+    await collection.deleteMany({
+      $or: [
+        { sourceId: sourceId },
+        { "metadata.sourceId": sourceId }
+      ]
+    });
+  } catch (err) {
+    console.error("Failed to delete vectors:", err);
   } finally {
     await client.close();
   }
@@ -153,13 +167,18 @@ export async function retryKnowledgeSourceAction(sourceId: string) {
   const source = await KnowledgeSource.findById(sourceId);
   if (!source) return { error: "Source not found" };
 
-  await inngest.send({
-    name: "knowledge/retry",
-    data: {
-      sourceId,
-      workspaceId: ctx.workspaceId,
-    },
-  });
+  try {
+    await inngest.send({
+      name: "knowledge/retry",
+      data: {
+        sourceId,
+        workspaceId: ctx.workspaceId,
+      },
+    });
+  } catch (err: any) {
+    console.error("Inngest retry error:", err);
+    return { error: "Failed to queue retry job. Please ensure Inngest dev server is running." };
+  }
 
   // NEXT 16 API: Bust cache
   updateTag(`knowledge-${ctx.workspace._id.toString()}`);
