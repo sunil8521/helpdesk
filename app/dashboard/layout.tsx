@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { getUnresolvedConversationsCount } from "@/lib/chat/inbox-service";
 
 import { connectToDatabase } from "@/lib/db/connect";
 import { Workspace } from "@/lib/db/models/Workspace";
@@ -46,9 +47,16 @@ async function DashboardDataProvider({ children }: { children: React.ReactNode }
     avatarUrl: session.user.image || "",
   };
 
+  let inboxCount = 0;
+  if (activeWorkspace) {
+    inboxCount = await getUnresolvedConversationsCount(activeWorkspace.id);
+  }
+
   return (
     <StoreProvider user={serializedUser} workspace={activeWorkspace}>
-      {children}
+      <DashboardShell inboxCount={inboxCount}>
+        {children}
+      </DashboardShell>
     </StoreProvider>
   );
 }
@@ -57,9 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <Suspense fallback={<div className="flex-1 flex justify-center py-20"><Loader2 className="animate-spin text-brand" /></div>}>
       <DashboardDataProvider>
-        <DashboardShell>
-          {children}
-        </DashboardShell>
+        {children}
       </DashboardDataProvider>
     </Suspense>
   );

@@ -75,9 +75,7 @@ export function TeamClientView({ members, workspaceName }: TeamClientViewProps) 
           </p>
         </div>
 
-        <Button className="bg-brand text-white hover:bg-brand/85 rounded-full h-11 px-6 font-semibold text-[14px] shadow-md shadow-brand/15 cursor-pointer">
-          <UserPlus className="h-4 w-4 mr-2" /> Invite Teammate
-        </Button>
+     
       </div>
 
       {/* KPI Cards (Commented out per user request - do not remove) */}

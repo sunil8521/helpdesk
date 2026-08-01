@@ -2,6 +2,7 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { Conversation } from "../db/models/Conversation";
 import { searchWorkspaceVectorsWithScores } from "./vector-store";
+import * as routingService from "../chat/routing-service";
 import type { HumanFallbackBehavior } from "./agent-instructions";
 
 const MAX_CONTEXT_CHARS_PER_RESULT = 1_200;
@@ -9,9 +10,9 @@ const MAX_CONTEXT_CHARS_PER_RESULT = 1_200;
 function getConfidenceConfig(config: { configurable?: Record<string, unknown> } | undefined) {
   const agentPayload = config?.configurable?.agentPayload as
     | {
-        confidenceThreshold?: number;
-        humanFallbackBehavior?: HumanFallbackBehavior;
-      }
+      confidenceThreshold?: number;
+      humanFallbackBehavior?: HumanFallbackBehavior;
+    }
     | undefined;
 
   const confidenceThreshold = agentPayload?.confidenceThreshold;
@@ -19,9 +20,9 @@ function getConfidenceConfig(config: { configurable?: Record<string, unknown> } 
   return {
     threshold:
       typeof confidenceThreshold === "number" &&
-      Number.isFinite(confidenceThreshold) &&
-      confidenceThreshold >= 0 &&
-      confidenceThreshold <= 1
+        Number.isFinite(confidenceThreshold) &&
+        confidenceThreshold >= 0 &&
+        confidenceThreshold <= 1
         ? confidenceThreshold
         : 0.65,
     fallbackBehavior: agentPayload?.humanFallbackBehavior === "cannot" ? "cannot" : "escalate",
@@ -62,18 +63,31 @@ export const escalateToHumanTool = new DynamicStructuredTool({
   }),
   func: async ({ reason }, runManager, config) => {
     const sessionId = config?.configurable?.thread_id;
+    const conversationId = config?.configurable?.conversationId as string | undefined;
     if (!sessionId) return "Error: Missing session ID";
 
     try {
-      const convo = await Conversation.findOne({ visitorId: sessionId });
-      if (convo) {
-        convo.status = "waiting";
-        convo.handoffReason = reason;
-        await convo.save();
+      // Find conversation by visitorId (sessionId) if conversationId not provided
+      let convoId = conversationId;
+      if (!convoId) {
+        const convo = await Conversation.findOne({ visitorId: sessionId });
+        if (!convo) return "Failed to escalate. Conversation not found.";
+        convoId = convo._id.toString();
+      }
+
+      // Use routing service instead of direct status mutation
+      const result = await routingService.requestHumanHandoff({
+        conversationId: convoId,
+        reason,
+      });
+
+      if (result) {
         return `Escalated to human support successfully. Reason: ${reason}. Please inform the user that a human agent has been notified and will be with them shortly.`;
       }
-      return "Failed to escalate. Conversation not found.";
+
+      return "Failed to escalate. Conversation may not be in AI mode.";
     } catch (e) {
+      console.error("Escalation error:", e);
       return "Error during escalation.";
     }
   },

@@ -6,7 +6,6 @@ import { useState } from "react";
 import { HelpdeskLogo } from "@/components/hendesk/logo";
 import { UserProfileDropdown } from "@/components/hendesk/user-profile-dropdown";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Inbox,
@@ -24,25 +23,25 @@ import {
   X,
   Sparkles,
   Command,
-  LogOut,
+  
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 import { useAppStore } from "@/store/use-workspace-store";
 
-const nav = [
-  { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/dashboard/inbox", label: "Inbox", icon: Inbox, badge: "3" },
-  { to: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen },
-  { to: "/dashboard/widget", label: "Widget", icon: MessageSquareCode },
-  { to: "/dashboard/team", label: "Team", icon: Users },
-  { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/dashboard/settings", label: "Settings", icon: Settings },
-];
-
-export function DashboardShell({ children }: { children?: ReactNode }) {
+export function DashboardShell({ children, inboxCount = 0 }: { children?: ReactNode, inboxCount?: number }) {
   const pathname = usePathname();
+
+  const nav = [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+    { to: "/dashboard/inbox", label: "Inbox", icon: Inbox, badge: inboxCount > 0 ? String(inboxCount) : undefined },
+    { to: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen },
+    { to: "/dashboard/widget", label: "Widget", icon: MessageSquareCode },
+    { to: "/dashboard/team", label: "Team", icon: Users },
+    { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+    { to: "/dashboard/settings", label: "Settings", icon: Settings },
+  ];
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { currentWorkspace, user } = useAppStore();
 
@@ -144,24 +143,11 @@ export function DashboardShell({ children }: { children?: ReactNode }) {
             <Link href="/" className="shrink-0"><HelpdeskLogo showText={false} /></Link>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-md hidden sm:block">
-            <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-foreground/35" />
-            <input
-              placeholder="Search conversations, docs, people…"
-              className="w-full pl-10 pr-12 h-10 text-[13.5px] rounded-xl bg-card border border-border/50 text-foreground placeholder:text-foreground/35 outline-none focus:border-brand transition-colors"
-            />
-            <div className="absolute right-3 top-2.5 hidden md:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted text-[10px] font-mono text-foreground/40 font-semibold border border-border/40">
-              <Command className="h-2.5 w-2.5" /> K
-            </div>
-          </div>
+       
 
           {/* Header Right Tools */}
           <div className="flex items-center gap-3 ml-auto">
-            <button className="relative h-10 w-10 rounded-xl bg-card border border-border/50 hover:bg-foreground/[0.04] grid place-items-center transition-colors shadow-2xs">
-              <Bell className="h-4.5 w-4.5 text-foreground/60" />
-              <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-brand ring-2 ring-background" />
-            </button>
+           
 
             {/* Profile Dropdown */}
             <UserProfileDropdown 

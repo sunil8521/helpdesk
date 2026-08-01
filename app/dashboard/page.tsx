@@ -86,17 +86,11 @@ export default function OverviewPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/widget"
-            className="px-5 h-11 rounded-full bg-card border border-border/60 text-[14px] font-semibold text-foreground/80 hover:text-foreground hover:border-foreground/20 flex items-center gap-2 transition-all shadow-2xs"
+            className="px-5 h-11 rounded-full bg-brand   border border-border/60 text-[14px] font-semibold text-white hover:text-foreground hover:border-foreground/20 flex items-center gap-2 transition-all shadow-2xs"
           >
             <span>Customize Widget</span>
           </Link>
-          <Link
-            href="/onboarding"
-            className="px-5 h-11 rounded-full bg-brand text-white text-[14px] font-semibold flex items-center gap-2 shadow-md shadow-brand/15 hover:bg-brand/85 transition-all"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>Setup Wizard</span>
-          </Link>
+        
         </div>
       </div>
 

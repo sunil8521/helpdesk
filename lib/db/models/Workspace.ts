@@ -15,6 +15,7 @@ export interface IWorkspace extends Document {
   ownerId: mongoose.Types.ObjectId;
   plan: "free" | "pro" | "enterprise";
   apiKeys: IApiKey[];
+  nextVisitorNumber: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +36,7 @@ const WorkspaceSchema = new Schema<IWorkspace>(
     ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     plan: { type: String, enum: ["free", "pro", "enterprise"], default: "pro" },
     apiKeys: [ApiKeySchema],
+    nextVisitorNumber: { type: Number, default: 1 },
   },
   { timestamps: true }
 );

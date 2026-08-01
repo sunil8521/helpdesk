@@ -53,7 +53,7 @@ async function WidgetEmbedContent({ searchParams }: { searchParams: Promise<{ wo
 
   return (
     <WidgetEmbedClient
-      workspaceId={safeConfig.workspaceId.toString()}
+      workspaceId={workspaceId!}
       config={safeConfig}
       agent={safeAgent}
       ssoEmail={email}
