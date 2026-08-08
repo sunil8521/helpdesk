@@ -10,7 +10,10 @@ export async function getWidgetConfig(workspaceObjectId: string, workspaceString
   try {
     await connectToDatabase();
 
-    const widgetConfig = await WidgetConfig.findOne({ workspaceId: workspaceObjectId }).lean();
+    const [widgetConfig, agent] = await Promise.all([
+      WidgetConfig.findOne({ workspaceId: workspaceObjectId }).lean(),
+      Agent.findOne({ workspaceId: workspaceObjectId }).select("name role").lean(),
+    ]);
 
     // Next 16 dynamic tag caching
     cacheTag(`widgetConfig-${workspaceObjectId}`);
@@ -18,6 +21,7 @@ export async function getWidgetConfig(workspaceObjectId: string, workspaceString
     return {
       success: true,
       config: widgetConfig,
+      agentInfo: agent ? { name: agent.name, role: agent.role } : null,
       workspaceId: workspaceStringId,
     };
   } catch (err: any) {
@@ -44,6 +48,7 @@ export async function getPublicWidgetConfigBySlug(workspaceStringId: string) {
       success: true,
       config: widgetConfig,
       agent: agent,
+      workspaceOid: workspace._id.toString()
     };
   } catch (err: any) {
     return {

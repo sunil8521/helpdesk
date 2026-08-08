@@ -7,6 +7,31 @@ import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 import { updateTag } from "next/cache";
 
 /**
+ * Helper to queue a knowledge source for processing
+ */
+async function queueKnowledgeSource(sourceId: string, workspaceId: string, type: string) {
+  try {
+    if (type === "url") {
+      await inngest.send({
+        name: "knowledge/process-url",
+        data: { sourceId, workspaceId },
+      });
+    } else {
+      await inngest.send({
+        name: "knowledge/process-source",
+        data: { sourceId, workspaceId },
+      });
+    }
+    await KnowledgeSource.findByIdAndUpdate(sourceId, { status: "queued", errorMessage: null });
+    return { success: true };
+  } catch (err: any) {
+    console.error("Inngest queue error:", err);
+    await KnowledgeSource.findByIdAndUpdate(sourceId, { status: "unable_to_queue", errorMessage: err.message });
+    return { error: err.message || "Failed to queue document" };
+  }
+}
+
+/**
  * Unified Knowledge Source Creator
  * Supports text, url, and file types.
  */
@@ -24,6 +49,7 @@ export async function createKnowledgeSourceAction(data: {
 }) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
+  if (ctx.role === "agent") return { error: "Only admins and owners can modify documents" };
 
   await connectToDatabase();
 
@@ -32,7 +58,7 @@ export async function createKnowledgeSourceAction(data: {
     sourceType: data.type,
     title: data.title,
     uploaderUserId: ctx.userId,
-    status: data.type === "url" ? "pending" : "uploaded",
+    status: "uploaded",
   };
 
   if (data.type === "text" && data.rawText) {
@@ -46,35 +72,55 @@ export async function createKnowledgeSourceAction(data: {
     sourceData.mimeType = data.file.mimeType;
   }
 
-  const source = await KnowledgeSource.create(sourceData);
-
+  let source;
   try {
-    if (data.type === "url") {
-      await inngest.send({
-        name: "knowledge/process-url",
-        data: {
-          sourceId: source._id.toString(),
-          workspaceId: ctx.workspaceId,
-        },
-      });
-    } else {
-      await inngest.send({
-        name: "knowledge/process-source",
-        data: {
-          sourceId: source._id.toString(),
-          workspaceId: ctx.workspaceId,
-        },
-      });
-    }
+    source = await KnowledgeSource.create(sourceData);
   } catch (err: any) {
-    console.error("Inngest queue error:", err);
-    return { error: "Failed to queue background job. Please ensure Inngest dev server is running." };
+    console.error("DB Upload Error:", err);
+    return { error: "Failed to upload document to database" };
   }
+
+  const queueResult = await queueKnowledgeSource(source._id.toString(), ctx.workspace._id.toString(), data.type);
 
   // NEXT 16 API: Forces an immediate, synchronous update for the dashboard
   updateTag(`knowledge-${ctx.workspace._id.toString()}`);
 
+  if (queueResult.error) {
+    return { error: queueResult.error };
+  }
+
   return { success: true, sourceId: source._id.toString() };
+}
+
+/**
+ * Retry Knowledge Source Queue
+ * Retries sending the document to the background queue.
+ */
+export async function retryKnowledgeQueueAction(sourceId: string) {
+  const ctx = await resolveUserWorkspace();
+  if (!ctx) return { error: "Unauthorized" };
+
+  await connectToDatabase();
+  const source = await KnowledgeSource.findById(sourceId);
+  if (!source) return { error: "Source not found" };
+
+  // Verify workspace ownership
+  if (source.workspaceId.toString() !== ctx.workspace._id.toString()) {
+    return { error: "Unauthorized" };
+  }
+
+  if (!["unable_to_queue", "failed", "uploaded"].includes(source.status)) {
+    return { error: "Document is not in a retryable state." };
+  }
+
+  const queueResult = await queueKnowledgeSource(source._id.toString(), ctx.workspace._id.toString(), source.sourceType);
+
+  updateTag(`knowledge-${ctx.workspace._id.toString()}`);
+  
+  if (queueResult.error) {
+    return { error: queueResult.error };
+  }
+  return { success: true };
 }
 
 /**
@@ -107,6 +153,7 @@ export async function checkKnowledgeSourceStatusAction(sourceIds: string[]) {
 export async function deleteKnowledgeSourceAction(sourceId: string) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
+  if (ctx.role === "agent") return { error: "Only admins and owners can modify documents" };
 
   await connectToDatabase();
   const source = await KnowledgeSource.findById(sourceId);

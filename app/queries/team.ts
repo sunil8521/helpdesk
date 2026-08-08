@@ -20,15 +20,17 @@ export interface FormattedTeamMember {
 export async function getTeamMembers() {
   try {
     const ctx = await resolveUserWorkspace();
-    if (!ctx) return { success: false, error: "Unauthorized", members: [], workspaceName: "" };
+    if (!ctx) return { success: false, error: "Unauthorized", members: [], workspaceName: "", role: undefined };
 
-    return await fetchTeamMembersCached(ctx.workspace._id.toString(), ctx.workspace.name);
+    const data = await fetchTeamMembersCached(ctx.workspace._id.toString(), ctx.workspace.name);
+    return { ...data, role: ctx.role };
   } catch (err: any) {
     return {
       success: false,
       error: err?.message || "Failed to fetch team members",
       members: [],
       workspaceName: "",
+      role: undefined,
     };
   }
 }

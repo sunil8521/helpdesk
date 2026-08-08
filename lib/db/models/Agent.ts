@@ -1,16 +1,16 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IAgent extends Document {
-  workspaceId: mongoose.Types.ObjectId; // 1:1 relationship with Workspace
-  name: string; // e.g. "Maya"
-  role: string; // e.g. "E-commerce Shopping Assistant"
-  description: string; // System prompt instructions ("describe the agent you want to create")
+  workspaceId: mongoose.Types.ObjectId;
+  name: string; 
+  role: string; 
+  description: string;
   tone: "Friendly" | "Professional" | "Concise" | "Technical";
   responseLength: "Minimalist" | "Standard" | "Detailed";
-  aiModel: string; // e.g. "gemini-2.5-flash"
-  temperature: number; // default: 0.3
-  confidenceThreshold: number; // default: 0.65
-  humanFallbackBehavior: "escalate" | "cannot"; // 'escalate' | 'cannot'
+  aiModel: string; 
+  temperature: number; 
+  confidenceThreshold: number; 
+  humanFallbackBehavior: "escalate" | "cannot"; 
   createdAt: Date;
   updatedAt: Date;
 }

@@ -6,11 +6,10 @@ const map: Record<string, string> = {
   waiting: "bg-amber/15 text-amber-foreground ring-amber/30",
   resolved: "bg-muted text-muted-foreground ring-border",
   uploaded: "bg-muted text-muted-foreground ring-border",
-  processing: "bg-amber/15 text-amber-foreground ring-amber/30",
-  chunked: "bg-brand/10 text-brand ring-brand/20",
-  embedding: "bg-brand/10 text-brand ring-brand/20",
   completed: "bg-emerald/10 text-emerald ring-emerald/20",
   failed: "bg-destructive/10 text-destructive ring-destructive/20",
+  unable_to_queue: "bg-destructive/10 text-destructive ring-destructive/20",
+  queued: "bg-amber/15 text-amber-foreground ring-amber/30",
   running: "bg-brand/10 text-brand ring-brand/20",
   online: "bg-emerald/10 text-emerald ring-emerald/20",
   away: "bg-amber/15 text-amber-foreground ring-amber/30",
@@ -22,6 +21,7 @@ const labels: Record<string, string> = {
   human: "Human",
   waiting: "Waiting",
   resolved: "Resolved",
+  unable_to_queue: "Queue Error",
 };
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {

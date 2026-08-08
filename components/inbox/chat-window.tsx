@@ -6,12 +6,11 @@ import { getAgentSocketToken } from "@/app/actions/chat";
 import { v4 as uuidv4 } from "uuid";
 import {
   Sparkles, User, Send, UserPlus, Bot, CheckCircle2, MoreHorizontal,
-  Ticket, Contact, Circle, Clock, ChevronRight, Info, Headphones,
+  Circle, Clock, Info, Headphones,
 } from "lucide-react";
 import { StatusBadge } from "@/components/hendesk/status-badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import type { SocketMessage, SocketRouteChange } from "@/lib/chat/socket-events";
 import { useRouter } from "next/navigation";
 
@@ -61,15 +60,6 @@ function MessageBubble({ m, visitorName }: { m: any; visitorName: string }) {
             <span>AI Assistant</span>
             <span className="text-[10px] text-foreground/35">· {formattedTime}</span>
           </div>
-          {m.citations && m.citations.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5 pl-1">
-              {m.citations.map((c: any, i: number) => (
-                <span key={i} className="text-[10.5px] font-semibold px-2 py-0.5 rounded-lg bg-card border border-border/50 text-foreground/50">
-                  {c.title}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -102,8 +92,8 @@ function TimelineItem({ icon: Icon, label, time }: { icon: any; label: string; t
         <Icon className="h-3.5 w-3.5 text-foreground/50" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-foreground font-medium truncate">{label}</div>
-        <div className="text-[11px] text-foreground/40">{time}</div>
+        <div className="text-foreground font-medium leading-snug">{label}</div>
+        <div className="text-[11px] text-foreground/40 mt-0.5">{time}</div>
       </div>
     </li>
   );
@@ -143,7 +133,7 @@ export function ChatWindow({
       try {
         const result = await getAgentSocketToken();
         if (result.token) setAgentToken(result.token);
-      } catch {}
+      } catch { }
     }
     fetchToken();
   }, []);
@@ -156,7 +146,7 @@ export function ChatWindow({
 
   useEffect(() => {
     if (!socket || !connected) return;
-    socket.emit("conversation:join", { conversationId: currentConvo._id }, () => {});
+    socket.emit("conversation:join", { conversationId: currentConvo._id }, () => { });
   }, [socket, connected, currentConvo._id]);
 
   useEffect(() => {
@@ -236,11 +226,10 @@ export function ChatWindow({
     });
   };
 
-  const visitorName = currentConvo.visitor?.name || "Anonymous";
-  const visitorEmail = currentConvo.visitor?.email || "";
-  const visitorDevice = currentConvo.visitor?.device || "Desktop / Chrome";
-  const visitorPage = currentConvo.visitor?.currentPage || "/";
-  const isAssignedToMe = currentConvo.assignedAgentUserId === agentUserId;
+  const visitorName = currentConvo.visitor?.name
+  const visitorEmail = currentConvo.visitor?.email
+  const visitorDevice = currentConvo.visitor?.device
+  const visitorPage = currentConvo.visitor?.currentPage
 
   const getInitials = (name: string) => name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 
@@ -252,9 +241,9 @@ export function ChatWindow({
       time: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       icon: m.systemEventType === "handoff_requested" ? Clock
         : m.systemEventType === "agent_joined" ? UserPlus
-        : m.systemEventType === "ai_resumed" ? Bot
-        : m.systemEventType === "conversation_resolved" ? CheckCircle2
-        : Circle,
+          : m.systemEventType === "ai_resumed" ? Bot
+            : m.systemEventType === "conversation_resolved" ? CheckCircle2
+              : Circle,
     }));
 
   return (
@@ -309,9 +298,7 @@ export function ChatWindow({
         {/* Pinned Reply Box */}
         <div className="border-t border-border/40 p-4 bg-card shrink-0 space-y-2">
           <div className="flex items-center justify-between text-[12px] font-medium text-foreground/40">
-            <div className="flex items-center gap-3">
-              <span className="font-bold text-foreground">Reply</span>
-            </div>
+
             <span>Replying as <strong className="text-foreground font-semibold">{agentName || "Agent"}</strong></span>
           </div>
 
@@ -322,14 +309,15 @@ export function ChatWindow({
                 onChange={(e) => setReply(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
                 rows={2}
-                placeholder="Type your message to customer…"
-                className="resize-none rounded-2xl text-[13.5px] leading-relaxed p-3 bg-background border-border/60 focus:border-brand"
+                disabled={currentConvo.status === "resolved" || currentConvo.status === "ai"}
+                placeholder={currentConvo.status === "resolved" ? "Conversation resolved" : currentConvo.status === "ai" ? "AI is handling this conversation" : "Type your message to customer…"}
+                className="resize-none rounded-2xl text-[13.5px] leading-relaxed p-3 bg-background border-border/60 focus:border-brand disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             <Button
-              className="bg-brand text-white hover:bg-brand/85 rounded-full h-11 px-6 font-semibold text-[14px] shadow-sm shrink-0 cursor-pointer"
+              className="bg-brand text-white hover:bg-brand/85 rounded-full h-11 px-6 font-semibold text-[14px] shadow-sm shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={sendReply}
-              disabled={!reply.trim() || !connected}
+              disabled={!reply.trim() || !connected || currentConvo.status === "resolved" || currentConvo.status === "ai"}
             >
               <Send className="h-4 w-4 mr-1.5" /> Send
             </Button>
@@ -338,9 +326,9 @@ export function ChatWindow({
       </div>
 
       {/* ── Right Column: Visitor Profile & Timeline ── */}
-      <aside className="hidden lg:flex flex-col h-full border-l border-border/40 bg-card overflow-y-auto p-5 space-y-6 select-none scrollbar-none">
-        {/* Visitor Card */}
-        <div className="space-y-4">
+      <aside className="hidden lg:flex flex-col h-full border-l border-border/40 bg-card select-none overflow-hidden">
+        {/* Visitor Card (Pinned) */}
+        <div className="p-5 space-y-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-full bg-brand/10 text-brand grid place-items-center text-[15px] font-bold">
               {getInitials(visitorName)}
@@ -361,31 +349,48 @@ export function ChatWindow({
               <span className="text-foreground/80 font-medium block">{visitorDevice}</span>
             </div>
             <div className="col-span-2">
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block">Active Page</span>
-              <span className="text-brand font-semibold truncate block">{visitorPage}</span>
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block mb-1">Active Page</span>
+              <span className="text-brand font-semibold break-all block leading-tight">
+                {(() => {
+                  if (!visitorPage) return "Unknown";
+                  try {
+                    const url = new URL(visitorPage);
+                    return url.pathname + url.search + url.hash || "/";
+                  } catch (e) {
+                    return visitorPage;
+                  }
+                })()}
+              </span>
             </div>
-            <div>
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block">Mode</span>
-              <StatusBadge status={currentConvo.status} />
+            <div className="col-span-2 flex items-center justify-between">
+              <div>
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block mb-1">Mode</span>
+                <StatusBadge status={currentConvo.status} />
+              </div>
             </div>
-            <div>
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block">Handoff Reason</span>
-              <span className="text-foreground/75 font-medium truncate block">{currentConvo.handoffReason || "—"}</span>
-            </div>
+            {currentConvo.handoffReason && (
+              <div className="col-span-2 mt-1">
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block mb-1.5">Handoff Reason</span>
+                <div className="bg-card/60 border border-border/50 rounded-xl p-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+                  <span className="text-foreground/75 font-medium leading-relaxed block text-[12.5px] italic">"{currentConvo.handoffReason}"</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Timeline */}
-        <div className="space-y-3 pt-2 border-t border-border/40">
-          <h4 className="text-[12px] font-bold uppercase tracking-wider text-foreground/40">Activity Timeline</h4>
-          <ol className="space-y-3 text-[12.5px]">
-            <TimelineItem icon={Circle} label="Visitor started conversation" time={new Date(currentConvo.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} />
-            {systemTimeline.map((item, i) => (
-              <TimelineItem key={i} icon={item.icon} label={item.label} time={item.time} />
-            ))}
-          </ol>
+        {/* Timeline (Scrollable) */}
+        <div className="flex-1 overflow-y-auto scrollbar-none px-5 pb-5">
+          <div className="space-y-3 pt-5 border-t border-border/40">
+            <h4 className="text-[12px] font-bold uppercase tracking-wider text-foreground/40">Activity Timeline</h4>
+            <ol className="space-y-3 text-[12.5px]">
+              <TimelineItem icon={Circle} label="Visitor started conversation" time={currentConvo.createdAt ? new Date(currentConvo.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Unknown"} />
+              {systemTimeline.map((item, i) => (
+                <TimelineItem key={i} icon={item.icon} label={item.label} time={item.time} />
+              ))}
+            </ol>
+          </div>
         </div>
-
       </aside>
     </>
   );

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 import { getKnowledgeSources } from "@/app/queries/knowledge";
 import { KnowledgeClientView } from "@/components/knowledge/knowledge-client-view";
+import { KnowledgeQuickAdd } from "@/components/knowledge/knowledge-quick-add";
 
 function KnowledgeSkeleton() {
   return (
@@ -38,12 +39,12 @@ function KnowledgeSkeleton() {
   );
 }
 
-async function KnowledgeDataStreamer({ workspaceId }: { workspaceId: string }) {
+async function KnowledgeDataStreamer({ workspaceId, role }: { workspaceId: string; role?: string }) {
   const res = await getKnowledgeSources();
   const initialSources = (res as any).sources || [];
 
   return (
-    <KnowledgeClientView initialSources={initialSources} workspaceId={workspaceId} />
+    <KnowledgeClientView initialSources={initialSources} workspaceId={workspaceId} role={role} />
   );
 }
 
@@ -52,9 +53,12 @@ export default async function KnowledgePage() {
   const workspaceId = ctx?.workspaceId || "";
 
   return (
-    <div className="p-5 sm:p-8 lg:p-10 max-w-[1400px] mx-auto">
+    <div className="p-5 sm:p-8 lg:p-10 max-w-[1400px] mx-auto space-y-6">
+      {ctx?.role !== "agent" && (
+        <KnowledgeQuickAdd workspaceId={workspaceId} />
+      )}
       <Suspense fallback={<KnowledgeSkeleton />}>
-        <KnowledgeDataStreamer workspaceId={workspaceId} />
+        <KnowledgeDataStreamer workspaceId={workspaceId} role={ctx?.role} />
       </Suspense>
     </div>
   );

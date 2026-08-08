@@ -179,8 +179,7 @@ export async function requestPasswordResetAction(email: string) {
     // We only send a reset code if the user exists
     const user = await User.findOne({ email: cleanEmail }).lean();
     if (!user) {
-      // Don't leak whether the user exists or not
-      return { success: true };
+      return { error: "No account found with this email address." };
     }
 
     // Generate 6 digit code

@@ -18,9 +18,11 @@ interface WorkspaceProfileCardProps {
     slug: string;
     plan: string;
   };
+  role?: string;
 }
 
-export function WorkspaceProfileCard({ initialWorkspace }: WorkspaceProfileCardProps) {
+export function WorkspaceProfileCard({ initialWorkspace, role }: WorkspaceProfileCardProps) {
+  const isOwner = role === "owner";
   const router = useRouter();
   const [workspaceName, setWorkspaceName] = useState(initialWorkspace.name);
   const [isSaving, setIsSaving] = useState(false);
@@ -52,6 +54,7 @@ export function WorkspaceProfileCard({ initialWorkspace }: WorkspaceProfileCardP
             value={workspaceName}
             onChange={(e) => setWorkspaceName(e.target.value)}
             placeholder="e.g. Acme Co."
+            disabled={!isOwner}
             className="h-11 rounded-xl bg-background border-border/50 text-[14px]"
           />
           <p className="text-[12px] text-foreground/45">
@@ -73,8 +76,9 @@ export function WorkspaceProfileCard({ initialWorkspace }: WorkspaceProfileCardP
         <div className="flex justify-end pt-2 border-t border-border/30">
           <Button
             onClick={handleSaveProfile}
-            disabled={isSaving}
-            className="bg-brand text-white hover:bg-brand/85 rounded-full h-10 px-6 font-semibold text-[13.5px] shadow-xs cursor-pointer"
+            disabled={isSaving || !workspaceName.trim() || !isOwner}
+            title={!isOwner ? "Only workspace owners can update settings" : undefined}
+            className={`h-10 px-5 rounded-xl bg-brand text-white font-bold shadow-md shadow-brand/20 transition-all ${!isOwner ? 'cursor-not-allowed opacity-50' : 'hover:bg-brand/90 cursor-pointer'}`}
           >
             {isSaving ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving Profile...</>

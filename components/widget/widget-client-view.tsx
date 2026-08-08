@@ -9,22 +9,33 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { updateWidgetConfigAction } from "@/app/actions/widget";
 import { toast } from "@/components/ui/toast";
+import { addFaqAction, deleteFaqAction } from "@/app/actions/faq";
 import {
   Copy,
   CheckCircle2,
   Palette,
   Sliders,
   Code2,
-  Loader2
+  Loader2,
+  HelpCircle,
+  Plus,
+  Trash2
 } from "lucide-react";
 
 export function WidgetClientView({ 
   initialConfig, 
-  workspaceId 
+  workspaceId,
+  agentInfo,
+  role,
+  initialFaqs
 }: { 
   initialConfig: any;
   workspaceId: string;
+  agentInfo?: { name: string; role: string } | null;
+  role?: string;
+  initialFaqs: any[];
 }) {
+  const isAgent = role === "agent";
   const [title, setTitle] = useState(initialConfig.title);
   const [greeting, setGreeting] = useState(initialConfig.greeting);
   const [theme, setTheme] = useState(initialConfig.themeColor);
@@ -34,6 +45,49 @@ export function WidgetClientView({
   const [avatarUrl] = useState(initialConfig.avatarUrl);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // FAQ State
+  const [faqs, setFaqs] = useState(initialFaqs || []);
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newAnswer, setNewAnswer] = useState("");
+  const [isAddingFaq, setIsAddingFaq] = useState(false);
+  const [deletingFaqId, setDeletingFaqId] = useState<string | null>(null);
+
+  const handleAddFaq = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQuestion.trim() || !newAnswer.trim()) return;
+    setIsAddingFaq(true);
+    try {
+      const res = await addFaqAction(newQuestion, newAnswer);
+      if (res.error) throw new Error(res.error);
+      
+      // Optimistic update
+      setFaqs([{ _id: Date.now().toString(), question: newQuestion, answer: newAnswer }, ...faqs]);
+      setNewQuestion("");
+      setNewAnswer("");
+      toast.add({ title: "FAQ Added", description: "Successfully added new FAQ", type: "success" });
+    } catch (err: any) {
+      toast.add({ title: "Failed to add FAQ", description: err.message, type: "error" });
+    } finally {
+      setIsAddingFaq(false);
+    }
+  };
+
+  const handleDeleteFaq = async (id: string) => {
+    setDeletingFaqId(id);
+    try {
+      const res = await deleteFaqAction(id);
+      if (res.error) throw new Error(res.error);
+      
+      // Optimistic update
+      setFaqs(faqs.filter((f: any) => f._id !== id));
+      toast.add({ title: "FAQ Deleted", description: "Successfully removed FAQ", type: "success" });
+    } catch (err: any) {
+      toast.add({ title: "Failed to delete FAQ", description: err.message, type: "error" });
+    } finally {
+      setDeletingFaqId(null);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -92,8 +146,9 @@ export function WidgetClientView({
               </div>
               <Button 
                 onClick={handleSave} 
-                disabled={isSaving}
-                className="h-10 px-5 rounded-xl bg-brand text-white hover:bg-brand/90 font-bold shadow-md shadow-brand/20 transition-all cursor-pointer shrink-0"
+                disabled={isSaving || isAgent}
+                title={isAgent ? "Only admins and owners can modify widget settings" : undefined}
+                className={`h-10 px-5 rounded-xl bg-brand text-white font-bold shadow-md shadow-brand/20 transition-all shrink-0 ${isAgent ? 'cursor-not-allowed opacity-50' : 'hover:bg-brand/90 cursor-pointer'}`}
               >
                 {isSaving ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
@@ -176,25 +231,86 @@ export function WidgetClientView({
               </div>
             </div>
           </div>
+
+          {/* FAQ Settings */}
+          <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-5">
+            <div>
+              <h3 className="font-bold text-[17px] tracking-tight flex items-center gap-2">
+                <HelpCircle className="h-4.5 w-4.5 text-brand" /> Frequently Asked Questions
+              </h3>
+              <p className="text-[12.5px] text-foreground/45 mt-0.5">Manage the FAQs displayed in your widget.</p>
+            </div>
+
+            <form onSubmit={handleAddFaq} className="space-y-3 bg-muted/50 p-4 rounded-2xl border border-border/50">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Question</Label>
+                <Input
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                  placeholder="e.g., What are your support hours?"
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Answer</Label>
+                <textarea
+                  value={newAnswer}
+                  onChange={(e) => setNewAnswer(e.target.value)}
+                  placeholder="Provide a clear, helpful answer..."
+                  className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                size="sm" 
+                className="w-full sm:w-auto font-bold rounded-xl"
+                disabled={isAddingFaq || !newQuestion.trim() || !newAnswer.trim()}
+              >
+                {isAddingFaq ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                Add FAQ
+              </Button>
+            </form>
+
+            <div className="space-y-3 mt-4">
+              {faqs.length === 0 ? (
+                <div className="text-center py-6 text-sm text-foreground/40 font-medium bg-muted/20 rounded-2xl border border-dashed border-border">
+                  No FAQs added yet.
+                </div>
+              ) : (
+                faqs.map((faq: any) => (
+                  <div key={faq._id} className="group relative flex justify-between gap-4 p-4 rounded-2xl border border-border/50 bg-background hover:border-brand/30 transition-colors shadow-xs">
+                    <div className="space-y-1 pr-8">
+                      <p className="text-sm font-semibold">{faq.question}</p>
+                      <p className="text-[13px] text-foreground/60 leading-relaxed">{faq.answer}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteFaq(faq._id)}
+                      disabled={deletingFaqId === faq._id}
+                      className="absolute top-4 right-4 h-8 w-8 grid place-items-center rounded-full text-foreground/30 hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-50"
+                    >
+                      {deletingFaqId === faq._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Live Clean Widget Preview */}
         <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-md space-y-4 sticky top-24 flex flex-col items-center">
-          <div className="w-full flex items-center justify-between">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-foreground/40 flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald animate-pulse" /> Live Widget Preview
-            </span>
-            <span className="text-[11px] font-semibold text-brand bg-brand/10 px-2.5 py-0.5 rounded-full">Interactive</span>
-          </div>
 
           <div className="w-full flex justify-center py-2">
             <WidgetPreview
               title={title}
+              agentName={agentInfo?.name}
+              agentRole={agentInfo?.role}
               greeting={greeting}
               avatarUrl={avatarUrl}
               themeColor={theme}
               buttonColor={btn}
               className="shadow-xl"
+              initialFaqs={faqs}
             />
           </div>
         </div>

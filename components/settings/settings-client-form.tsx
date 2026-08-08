@@ -24,9 +24,10 @@ interface SettingsClientFormProps {
     confidenceThreshold: number;
     humanFallbackBehavior: "escalate" | "cannot";
   };
+  role?: string;
 }
 
-export function SettingsClientForm({ initialWorkspace, initialAgent }: SettingsClientFormProps) {
+export function SettingsClientForm({ initialWorkspace, initialAgent, role }: SettingsClientFormProps) {
   return (
     <div className="space-y-8 font-sans">
       {/* Header Banner */}
@@ -43,13 +44,13 @@ export function SettingsClientForm({ initialWorkspace, initialAgent }: SettingsC
       </div>
 
       {/* 1. Workspace Profile Section */}
-      <WorkspaceProfileCard initialWorkspace={initialWorkspace} />
+      <WorkspaceProfileCard initialWorkspace={initialWorkspace} role={role} />
 
       {/* 2. AI Engine Parameters Section */}
-      <AISettingsCard initialAgent={initialAgent} />
+      <AISettingsCard initialAgent={initialAgent} role={role} />
 
       {/* 3. Danger Zone Section */}
-      <DangerZoneCard />
+      <DangerZoneCard role={role} />
     </div>
   );
 }

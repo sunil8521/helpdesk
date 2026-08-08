@@ -56,15 +56,14 @@ export function InboxSidebar({ initialConversations }: { initialConversations: a
         prev.map((c) =>
           c._id === change.conversationId
             ? {
-                ...c,
-                status: change.status,
-                assignedAgentUserId: change.assignedAgentUserId,
-                routingVersion: change.routingVersion,
-              }
+              ...c,
+              status: change.status,
+              assignedAgentUserId: change.assignedAgentUserId,
+              routingVersion: change.routingVersion,
+            }
             : c
         )
       );
-      router.refresh();
     };
 
     const handleListUpdated = (row: SocketConversationRow) => {
@@ -73,9 +72,15 @@ export function InboxSidebar({ initialConversations }: { initialConversations: a
         if (exists) {
           return prev.map((c) => (c._id === row._id ? { ...c, ...row } : c));
         }
-        return [{ ...row, createdAt: row.updatedAt, assignedAgentName: undefined }, ...prev];
+        return [
+          {
+            ...row,
+            createdAt: row.createdAt || row.updatedAt,
+            assignedAgentName: row.assignedAgentName || undefined,
+          },
+          ...prev,
+        ];
       });
-      router.refresh();
     };
 
     socket.on("conversation:route-changed", handleRouteChanged);

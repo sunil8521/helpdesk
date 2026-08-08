@@ -18,9 +18,9 @@ function SettingsSkeleton() {
 
 async function SettingsDataStreamer() {
   // NEXT 16 BEST PRACTICE: Fetch parallel queries directly via Server Component data access layer!
-  const { workspace, agent } = await getWorkspaceAndAgentSettings();
+  const { workspace, agent, role } = await getWorkspaceAndAgentSettings();
 
-  return <SettingsClientForm initialWorkspace={workspace} initialAgent={agent} />;
+  return <SettingsClientForm initialWorkspace={workspace} initialAgent={agent} role={role} />;
 }
 
 export default async function SettingsPage() {

@@ -7,9 +7,7 @@ import { initCheckpointer } from "./checkpoint";
 import { getLlm } from "./llm";
 import { buildAgentSystemPrompt, type AgentPromptConfig } from "./agent-instructions";
 
-// ---------------------------------------------------------------------------
-// Graph State — only messages. Visitor data stays in MongoDB (source of truth).
-// ---------------------------------------------------------------------------
+
 export const GraphState = Annotation.Root({
   messages: Annotation<BaseMessage[]>({
     reducer: (x: BaseMessage[], y: BaseMessage | BaseMessage[]) => x.concat(y),
@@ -20,10 +18,6 @@ export const GraphState = Annotation.Root({
 
 const toolNode = new ToolNode(allTools);
 
-// ---------------------------------------------------------------------------
-// chatBot Node — zero DB queries, zero LLM instantiation
-// Reads everything it needs from config.configurable (injected by chat.ts)
-// ---------------------------------------------------------------------------
 async function chatBot(state: typeof GraphState.State, config: RunnableConfig) {
   const agentPayload = config.configurable?.agentPayload as (AgentPromptConfig & {
     aiModel: string;
@@ -39,9 +33,11 @@ async function chatBot(state: typeof GraphState.State, config: RunnableConfig) {
     throw new Error("agentPayload is missing in config.configurable — chat.ts must provide it.");
   }
 
-  // Singleton LLM — cached by model:temperature key
-  const llm = getLlm(agentPayload.aiModel, agentPayload.temperature);
-  const llmWithTools = llm.bindTools(allTools);
+  const llm = getLlm(agentPayload.aiModel, agentPayload.temperature); //to get LLM
+  const allowedTools = agentPayload.humanFallbackBehavior === "cannot"
+    ? allTools.filter(t => t.name !== "escalate_to_human")
+    : allTools;
+  const llmWithTools = llm.bindTools(allowedTools);
 
   const visitorName = visitorSnapshot?.name || "Anonymous";
   const visitorEmail = visitorSnapshot?.email || "Unknown";
@@ -53,13 +49,10 @@ async function chatBot(state: typeof GraphState.State, config: RunnableConfig) {
     })
   );
 
-  const response = await llmWithTools.invoke([dynamicSystemPrompt, ...state.messages]);
+  const response = await llmWithTools.invoke([dynamicSystemPrompt, ...state.messages], config);
   return { messages: [response] };
 }
 
-// ---------------------------------------------------------------------------
-// Build the workflow graph (module-level, built once)
-// ---------------------------------------------------------------------------
 const workflow = new StateGraph(GraphState)
   .addNode("chatBot", chatBot)
   .addNode("tools", toolNode)
@@ -67,9 +60,6 @@ const workflow = new StateGraph(GraphState)
   .addConditionalEdges("chatBot", toolsCondition)
   .addEdge("tools", "chatBot");
 
-// ---------------------------------------------------------------------------
-// Singleton compiled graph — compiled once per server process
-// ---------------------------------------------------------------------------
 let compiledGraph: ReturnType<typeof workflow.compile> | null = null;
 
 export async function getCompiledGraph() {

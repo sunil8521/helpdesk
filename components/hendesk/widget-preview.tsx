@@ -1,6 +1,7 @@
 "use client";
 
-import { Send, BotMessageSquare, X, MessageSquare, HelpCircle, User, Paperclip } from "lucide-react";
+import { useState } from "react";
+import { Send, BotMessageSquare, X, MessageSquare, HelpCircle, User, Paperclip, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
   className?: string;
   compact?: boolean;
   quickPrompts?: string[];
+  initialFaqs?: any[];
 }
 
 export function WidgetPreview({
@@ -29,10 +31,14 @@ export function WidgetPreview({
   className,
   compact,
   quickPrompts = ["Browse products", "Track an order"],
+  initialFaqs = [],
 }: Props) {
+  const [activeTab, setActiveTab] = useState<"chat" | "faq">("chat");
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+
   return (
     <div className={cn(
-      "w-[370px] rounded-3xl bg-card border border-border/50 overflow-hidden select-none",
+      "w-[370px] h-[600px] max-h-[75vh] flex flex-col rounded-3xl bg-card border border-border/50 overflow-hidden select-none",
       "shadow-[0_28px_80px_-16px_rgba(0,0,0,0.2)] transition-all duration-300",
       compact && "w-[310px]",
       className
@@ -62,70 +68,107 @@ export function WidgetPreview({
       </div>
 
       {/* Messages body */}
-      <div className="p-4.5 space-y-3.5 h-[270px] overflow-auto scrollbar-none bg-background flex flex-col justify-start">
-        {/* AI Greeting */}
-        <div className="space-y-2">
-          <div className="rounded-2xl rounded-tl-xs bg-[oklch(0.975_0.003_260)] p-3 text-[12px] text-foreground leading-relaxed">
-            {greeting}
-          </div>
-          
-          {/* Quick Action Pill Buttons */}
-          {quickPrompts && quickPrompts.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {quickPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  className="text-[11px] font-semibold px-3 py-1.5 rounded-xl border border-border/60 bg-background text-foreground/80 hover:border-brand hover:text-brand transition-colors shadow-2xs"
-                >
-                  {prompt}
-                </button>
-              ))}
+      <div className="flex-1 overflow-auto scrollbar-none bg-background flex flex-col justify-start">
+        {/* Dynamic Body based on tab */}
+        {activeTab === "chat" ? (
+          <div className="p-4.5 space-y-3.5">
+            {/* AI Greeting */}
+            <div className="space-y-2">
+              <div className="rounded-2xl rounded-tl-xs bg-[oklch(0.975_0.003_260)] p-3 text-[12px] text-foreground leading-relaxed">
+                {greeting}
+              </div>
+
+              {/* Quick Action Pill Buttons */}
+              {quickPrompts && quickPrompts.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-xl border border-border/60 bg-background text-foreground/80 hover:border-brand hover:text-brand transition-colors shadow-2xs"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Simulated sample conversation */}
-        <div className="flex justify-end">
-          <div className="max-w-[85%] rounded-2xl rounded-br-xs px-3.5 py-2.5 text-[12px] text-white leading-relaxed shadow-xs" style={{ background: buttonColor }}>
-            What are your delivery times?
+            
+            <div className="flex justify-center mt-6">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-[11px] font-medium text-slate-600 dark:text-slate-300 shadow-2xs">
+                <span>You cannot chat in preview mode</span>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="rounded-2xl rounded-tl-xs bg-[oklch(0.975_0.003_260)] p-3 text-[12px] leading-relaxed text-foreground">
-            Standard delivery takes 2-3 business days. Express shipping is available at checkout!
+        ) : (
+          <div className="flex-1 overflow-y-auto scrollbar-none p-4 mt-2 flex flex-col space-y-3 min-h-[220px]">
+            {initialFaqs.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center text-foreground/50 py-6">
+                <HelpCircle className="h-8 w-8 mb-2 opacity-50" />
+                <p className="text-[12px]">No FAQs available yet.</p>
+              </div>
+            ) : (
+              initialFaqs.map((faq) => (
+                <div key={faq._id || faq.question} className="bg-muted/30 rounded-2xl border border-border/50 text-left overflow-hidden transition-all duration-200">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqId(openFaqId === faq._id ? null : faq._id)}
+                    className="w-full flex items-center justify-between p-3.5 text-left focus:outline-none"
+                  >
+                    <h4 className="text-[13px] font-bold text-foreground pr-4">{faq.question}</h4>
+                    <ChevronDown
+                      className={`h-4 w-4 text-foreground/50 transition-transform duration-200 shrink-0 ${openFaqId === faq._id ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <div 
+                    className={`px-3.5 pb-3.5 text-[12px] text-foreground/70 leading-relaxed transition-all duration-300 origin-top ${
+                      openFaqId === faq._id ? "block animate-in fade-in slide-in-from-top-2" : "hidden"
+                    }`}
+                  >
+                    {faq.answer}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-          <div className="flex gap-1.5">
-            <span className="text-[9px] font-semibold px-2 py-0.5 rounded-md bg-[oklch(0.975_0.003_260)] border border-border/30 text-foreground/40">Shipping Policy.pdf</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Input bar */}
-      <div className="p-2.5 border-t border-border/40 flex items-center gap-2 bg-background">
-        <div className="flex-1 h-9 px-3 rounded-xl bg-[oklch(0.975_0.003_260)] border border-border/30 flex items-center gap-2">
-          <Paperclip className="h-3.5 w-3.5 text-foreground/30 shrink-0" />
+      <div className="p-3 border-t border-border/20 flex items-center gap-2.5 bg-background">
+        <div className="flex-1 h-11 px-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex items-center gap-2 focus-within:bg-white focus-within:border-slate-300 focus-within:shadow-sm transition-all duration-200">
           <input
-            className="w-full text-[12px] bg-transparent outline-none text-foreground placeholder:text-foreground/25"
-            placeholder="Type your message…"
-            readOnly
+            className="w-full h-full text-[13.5px] bg-transparent outline-none text-slate-700 placeholder:text-slate-400"
+            placeholder="Type your message..."
           />
         </div>
-        <button className="h-9 w-9 rounded-xl grid place-items-center text-white shadow-xs shrink-0" style={{ background: buttonColor }}>
-          <Send className="h-3.5 w-3.5" />
+        <button
+          className="h-11 w-11 rounded-2xl grid place-items-center text-white shadow-sm shrink-0 cursor-pointer hover:scale-105 hover:shadow-md active:scale-95 transition-all duration-200"
+          style={{ background: buttonColor }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-4 h-4 ml-0.5"
+          >
+            <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
+          </svg>
         </button>
       </div>
 
       {/* Footer Navigation Tabs */}
       <div className="flex text-[11px] font-medium border-t border-border/30 bg-[oklch(0.99_0.002_260)] text-foreground/45 py-2">
-        <button className="flex-1 flex flex-col items-center gap-0.5 font-bold text-foreground">
-          <MessageSquare className="h-3.5 w-3.5" style={{ color: themeColor }} /> Chat
+        <button 
+          onClick={() => setActiveTab("chat")}
+          className={`flex-1 flex flex-col items-center gap-0.5 transition-colors ${activeTab === "chat" ? "font-bold text-foreground" : "hover:text-foreground"}`}
+        >
+          <MessageSquare className="h-3.5 w-3.5" style={activeTab === "chat" ? { color: themeColor } : {}} /> Chat
         </button>
-        <button className="flex-1 flex flex-col items-center gap-0.5 hover:text-foreground">
-          <HelpCircle className="h-3.5 w-3.5" /> Docs
-        </button>
-        <button className="flex-1 flex flex-col items-center gap-0.5 hover:text-foreground">
-          <User className="h-3.5 w-3.5" /> Agent
+        <button 
+          onClick={() => setActiveTab("faq")}
+          className={`flex-1 flex flex-col items-center gap-0.5 transition-colors ${activeTab === "faq" ? "font-bold text-foreground" : "hover:text-foreground"}`}
+        >
+          <HelpCircle className="h-3.5 w-3.5" style={activeTab === "faq" ? { color: themeColor } : {}} /> FAQ
         </button>
       </div>
 

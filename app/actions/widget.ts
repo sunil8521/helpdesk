@@ -16,6 +16,7 @@ export async function updateWidgetConfigAction(data: {
 }) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
+  if (ctx.role === "agent") return { error: "Only admins and owners can modify widget settings" };
 
   await connectToDatabase();
 

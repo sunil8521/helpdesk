@@ -130,7 +130,6 @@ export async function getConversationMessages(conversationId: string) {
           assignedAgentUserId: m.metadata.assignedAgentUserId?.toString(),
           reason: m.metadata.reason,
         } : undefined,
-        citations: m.citations,
         createdAt: m.createdAt?.toISOString?.() || "",
       })),
       conversation: conversation

@@ -1,20 +1,18 @@
-"use client";
-
+import { Suspense } from "react";
 import Link from "next/link";
+import { getWorkspaceAndAgentSettings } from "@/app/queries/settings";
+import { getDashboardStats } from "@/app/queries/dashboard";
+import { getKnowledgeSources } from "@/app/queries/knowledge";
+import { getInboxConversations } from "@/lib/chat/inbox-service";
 import { WidgetPreview } from "@/components/hendesk/widget-preview";
-import { StatusBadge } from "@/components/hendesk/status-badge";
-import { conversations } from "@/lib/mock-data";
+import { DashboardRecentConversations } from "@/components/dashboard/dashboard-recent-conversations";
 import { cn } from "@/lib/utils";
 import {
   MessageSquare,
-  Bot,
   UserCheck,
   Clock,
   Database,
-  Globe,
   ArrowUpRight,
-  CheckCircle2,
-  Circle,
   Sparkles,
   TrendingUp,
   ArrowRight,
@@ -60,17 +58,61 @@ function KPICard({
   );
 }
 
-export default function OverviewPage() {
-  const checklist = [
-    { label: "Add your website URL", done: true },
-    { label: "Upload knowledge documents", done: true },
-    { label: "Customize widget appearance", done: true },
-    { label: "Copy the install script", done: false },
-    { label: "Invite a teammate", done: false },
-  ];
+function OverviewSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse font-sans">
+      <div className="flex items-center justify-between">
+        <div className="space-y-3">
+          <div className="h-6 w-32 bg-muted rounded-full" />
+          <div className="h-10 w-64 bg-muted rounded-xl" />
+          <div className="h-4 w-96 bg-muted/60 rounded-md" />
+        </div>
+        <div className="h-11 w-40 bg-muted rounded-full" />
+      </div>
+      
+      {/* KPI Grid Skeleton */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-28 bg-card rounded-2xl border border-border/50 p-5 shadow-2xs" />
+        ))}
+      </div>
+
+      {/* Main Content Split Skeleton */}
+      <div className="grid lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_380px] gap-6">
+        <div className="h-96 bg-card rounded-3xl border border-border/50 p-6 shadow-2xs" />
+        <div className="space-y-6">
+          <div className="h-48 bg-card rounded-3xl border border-border/50 p-6 shadow-2xs" />
+          <div className="h-56 bg-card rounded-3xl border border-border/50 p-6 shadow-2xs" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function OverviewDataStreamer() {
+  const { workspace } = await getWorkspaceAndAgentSettings();
+  const workspaceId = workspace.id;
+
+  // Fetch real data from the database
+  const [stats, knowledge, inbox] = await Promise.all([
+    getDashboardStats(workspaceId),
+    getKnowledgeSources(),
+    getInboxConversations(workspaceId),
+  ]);
+  
+  const MAX_REQUESTS = 10000;
+  const requestsUsed = workspace.apiCallsUsed || 0;
+  const tokensUsed = workspace.tokensUsed || 0;
+  const percentUsed = Math.min(100, Math.round((requestsUsed / MAX_REQUESTS) * 100));
+
+  // Calculate total chunks
+  const totalChunks = ((knowledge as any).sources || []).reduce(
+    (acc: number, curr: any) => acc + (curr.chunksCount || 0),
+    0
+  );
 
   return (
-    <div className="p-5 sm:p-8 lg:p-10 space-y-8 max-w-[1400px] mx-auto">
+    <div className="space-y-8">
       {/* Welcome Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -78,9 +120,9 @@ export default function OverviewPage() {
             Workspace Dashboard
           </span>
           <h1 className="mt-2.5 text-[28px] sm:text-[36px] font-bold tracking-[-0.03em] leading-tight">
-            Acme Co. <em className="font-display not-italic italic text-brand">workspace</em>
+            {workspace.name} <em className="font-display not-italic italic text-brand">workspace</em>
           </h1>
-          <p className="mt-1 text-[14.5px] text-foreground/50">Welcome back, Alex! Here is your AI support performance overview.</p>
+          <p className="mt-1 text-[14.5px] text-foreground/50">Welcome back! Here is your AI support performance overview.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -95,140 +137,67 @@ export default function OverviewPage() {
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KPICard icon={MessageSquare} label="Conversations" value="1,284" delta="+12%" accentBg="bg-brand/8" accentColor="text-brand" />
-        <KPICard icon={Bot} label="AI Resolved" value="978" delta="+8%" accentBg="bg-purple-50" accentColor="text-purple-600" />
-        <KPICard icon={UserCheck} label="Human Handoffs" value="212" delta="+4%" accentBg="bg-amber/10" accentColor="text-amber" />
-        <KPICard icon={Clock} label="Avg Response" value="1m 48s" delta="-11%" accentBg="bg-emerald/10" accentColor="text-emerald" />
-        <KPICard icon={Database} label="Knowledge Chunks" value="1,904" accentBg="bg-blue-50" accentColor="text-blue-600" />
-        <KPICard icon={Globe} label="Active Crawls" value="1" accentBg="bg-emerald/10" accentColor="text-emerald" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard icon={MessageSquare} label="Conversations" value={stats.totalConversations.toLocaleString()} accentBg="bg-brand/8" accentColor="text-brand" />
+        <KPICard icon={UserCheck} label="Human Handoffs" value={stats.humanHandoffs.toLocaleString()} accentBg="bg-amber/10" accentColor="text-amber" />
+        <KPICard icon={Clock} label="Avg Response" value={stats.avgResponseTimeFormatted} accentBg="bg-emerald/10" accentColor="text-emerald" />
+        <KPICard icon={Database} label="Knowledge Chunks" value={totalChunks.toLocaleString()} accentBg="bg-blue-50" accentColor="text-blue-600" />
       </div>
 
       {/* Main Content Split: Table + Sidebar Stats */}
       <div className="grid lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_380px] gap-6">
         {/* Recent Conversations Table */}
-        <div className="rounded-3xl border border-border/50 bg-card overflow-hidden shadow-2xs flex flex-col justify-between">
-          <div>
-            <div className="px-6 py-4.5 border-b border-border/40 flex items-center justify-between bg-card">
-              <div>
-                <h3 className="font-bold text-[16px] tracking-tight">Recent Conversations</h3>
-                <p className="text-[12.5px] text-foreground/45 mt-0.5">Live incoming customer chats</p>
-              </div>
-              <Link href="/dashboard/inbox" className="text-[13px] font-semibold text-brand hover:underline inline-flex items-center gap-1">
-                Open Inbox <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13.5px]">
-                <thead className="bg-[oklch(0.985_0.003_260)] text-[11.5px] uppercase tracking-wider text-foreground/40 font-semibold border-b border-border/40">
-                  <tr>
-                    <th className="text-left font-semibold px-6 py-3">Visitor</th>
-                    <th className="text-left font-semibold px-6 py-3">Last Message</th>
-                    <th className="text-left font-semibold px-6 py-3">Status</th>
-                    <th className="text-left font-semibold px-6 py-3">Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
-                  {conversations.slice(0, 5).map((c) => (
-                    <tr key={c.id} className="hover:bg-foreground/[0.02] transition-colors">
-                      <td className="px-6 py-3.5 font-bold text-foreground">
-                        <div className="flex items-center gap-2.5">
-                          <div className="h-7 w-7 rounded-full bg-brand/8 text-brand font-bold text-[11px] grid place-items-center">
-                            {c.visitor.split(" ").map(n => n[0]).join("")}
-                          </div>
-                          <span>{c.visitor}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3.5 text-foreground/50 truncate max-w-[280px]">{c.preview}</td>
-                      <td className="px-6 py-3.5"><StatusBadge status={c.status} /></td>
-                      <td className="px-6 py-3.5 text-foreground/40 font-medium text-[12.5px]">{c.time}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="p-4 border-t border-border/40 bg-[oklch(0.985_0.003_260)] text-center">
-            <Link href="/dashboard/inbox" className="text-[13px] font-bold text-brand hover:underline inline-flex items-center gap-1">
-              View all 1,284 conversations <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
+        <DashboardRecentConversations 
+          initialConversations={inbox.conversations || []} 
+          totalCount={stats.totalConversations} 
+        />
 
         {/* Right Sidebar: AI Performance & Checklist */}
         <div className="space-y-6">
-          {/* AI Performance Card */}
-          <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-[16px] tracking-tight">AI Performance</h3>
-              <span className="text-[11px] font-bold text-emerald bg-emerald/10 px-2.5 py-0.5 rounded-full">Healthy</span>
-            </div>
-            <div className="space-y-3.5 pt-1">
-              <Row label="Resolution rate" value="76.2%" bar={76} />
-              <Row label="Cited answers" value="91.0%" bar={91} tone="emerald" />
-              <Row label="Handoff rate" value="16.5%" bar={16} tone="amber" />
-            </div>
-          </div>
 
-          {/* Setup Checklist */}
-          <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-4">
+          {/* API Usage & Credits */}
+          <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-[16px] tracking-tight">Setup Checklist</h3>
-              <span className="text-[12px] font-semibold text-foreground/40">3 of 5 done</span>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4.5 w-4.5 text-brand" />
+                <h3 className="font-bold text-[16px] tracking-tight">AI Credits</h3>
+              </div>
+              <span className="text-[14px] font-bold text-brand">{percentUsed}%</span>
             </div>
-            <ul className="space-y-2.5 pt-1">
-              {checklist.map((c) => (
-                <li key={c.label} className="flex items-center gap-3 text-[13.5px]">
-                  {c.done ? (
-                    <CheckCircle2 className="h-4.5 w-4.5 text-emerald shrink-0" />
-                  ) : (
-                    <Circle className="h-4.5 w-4.5 text-foreground/30 shrink-0" />
-                  )}
-                  <span className={cn("font-medium", c.done ? "text-foreground/45 line-through" : "text-foreground")}>
-                    {c.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            
+            <div className="space-y-2">
+              <div className="h-2.5 w-full bg-border/40 rounded-full overflow-hidden">
+                <div className="h-full bg-brand rounded-full transition-all duration-1000" style={{ width: `${percentUsed}%` }} />
+              </div>
+              <p className="text-[13px] font-medium text-foreground/50">
+                {requestsUsed.toLocaleString()} / {MAX_REQUESTS.toLocaleString()} requests used
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-border/40">
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-semibold text-foreground/50">Total Tokens</span>
+                <span className="text-[14px] font-bold">{tokensUsed.toLocaleString()}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Live Widget Preview Banner Section */}
-      <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-card via-[oklch(0.985_0.003_260)] to-card p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
-        <div className="space-y-2 max-w-md">
-          <span className="text-[11.5px] font-bold uppercase tracking-[0.15em] text-brand bg-brand/8 px-3 py-1 rounded-full">
-            Live Widget Preview
-          </span>
-          <h2 className="text-[22px] sm:text-[26px] font-bold tracking-tight leading-snug">
-            This is what your website visitors <em className="font-display not-italic italic text-brand">see live</em>
-          </h2>
-          <p className="text-[14px] text-foreground/50 leading-relaxed">
-            Adjust colors, position, greeting messages, and AI responses in your{" "}
-            <Link href="/dashboard/widget" className="text-brand font-semibold hover:underline">Widget Settings</Link>.
-          </p>
-        </div>
-        <div className="shrink-0">
-          <WidgetPreview compact />
-        </div>
-      </div>
+   
     </div>
   );
 }
 
-function Row({ label, value, bar, tone }: { label: string; value: string; bar: number; tone?: "emerald" | "amber" }) {
-  const c = tone === "emerald" ? "bg-emerald" : tone === "amber" ? "bg-amber" : "bg-brand";
+export default function OverviewPage() {
   return (
-    <div>
-      <div className="flex items-center justify-between text-[13px] font-medium">
-        <span className="text-foreground/60">{label}</span>
-        <span className="font-bold text-foreground">{value}</span>
-      </div>
-      <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full ${c} rounded-full transition-all duration-500`} style={{ width: `${bar}%` }} />
-      </div>
+    <div className="p-5 sm:p-8 lg:p-10 max-w-[1400px] mx-auto">
+      <Suspense fallback={<OverviewSkeleton />}>
+        <OverviewDataStreamer />
+      </Suspense>
     </div>
   );
 }
+
+

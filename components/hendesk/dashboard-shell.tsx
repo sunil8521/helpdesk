@@ -39,7 +39,6 @@ export function DashboardShell({ children, inboxCount = 0 }: { children?: ReactN
     { to: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen },
     { to: "/dashboard/widget", label: "Widget", icon: MessageSquareCode },
     { to: "/dashboard/team", label: "Team", icon: Users },
-    { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
     { to: "/dashboard/settings", label: "Settings", icon: Settings },
   ];
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -111,21 +110,6 @@ export function DashboardShell({ children, inboxCount = 0 }: { children?: ReactN
           })}
         </nav>
 
-        {/* AI Credits Widget */}
-        <div className="p-3 border-t border-border/40">
-          <div className="rounded-2xl bg-card border border-border/50 p-3.5 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between text-[12px] font-bold">
-              <span className="flex items-center gap-1.5 text-foreground/80">
-                <Sparkles className="h-3.5 w-3.5 text-brand" /> AI Credits
-              </span>
-              <span className="text-brand font-semibold">62%</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full bg-brand rounded-full transition-all duration-500" style={{ width: "62%" }} />
-            </div>
-            <div className="text-[11px] text-foreground/45 font-medium">6,200 / 10,000 requests used</div>
-          </div>
-        </div>
       </aside>
 
       {/* ── Main Content Area ── */}

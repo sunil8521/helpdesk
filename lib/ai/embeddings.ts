@@ -1,10 +1,11 @@
-import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { OpenAIEmbeddings } from "@langchain/openai";
 
-/**
- * Shared Google text-embedding-004 instance.
- * 768 dimensions, free with Gemini API key.
- */
-export const embeddings = new GoogleGenerativeAIEmbeddings({
-  model: "text-embedding-004",
+export const embeddings = new OpenAIEmbeddings({
+  model: "gemini-embedding-001", 
   apiKey: process.env.GOOGLE_API_KEY!,
+  dimensions: 1536,
+  batchSize: 100, // Google API limits batch embedding to 100 requests at a time
+  configuration: {
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  }
 });

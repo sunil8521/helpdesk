@@ -47,10 +47,6 @@ function serializeMessage(msg: any): SocketMessage {
     clientMessageId: msg.clientMessageId,
     systemEventType: msg.systemEventType,
     metadata: msg.metadata,
-    citations: msg.citations?.map((c: any) => ({
-      title: c.title,
-      sourceId: c.sourceId?.toString(),
-    })),
     createdAt: msg.createdAt?.toISOString?.() || new Date().toISOString(),
   };
 }
@@ -68,6 +64,14 @@ async function emitListUpdate(conversationId: string) {
     .sort({ sequence: -1 })
     .lean();
 
+  let assignedAgentName: string | undefined;
+  if (convo.assignedAgentUserId) {
+    const agent = await User.findById(convo.assignedAgentUserId).select("name").lean();
+    if (agent) {
+      assignedAgentName = agent.name;
+    }
+  }
+
   io.to(`workspace:${convo.workspaceId.toString()}:team`).emit(
     "conversation:list-updated",
     {
@@ -76,6 +80,7 @@ async function emitListUpdate(conversationId: string) {
       visitor: convo.visitor,
       status: convo.status,
       assignedAgentUserId: convo.assignedAgentUserId?.toString(),
+      assignedAgentName,
       handoffReason: convo.handoffReason,
       routingVersion: convo.routingVersion,
       lastMessage: last
@@ -388,9 +393,6 @@ export function initSocketServer(httpServer: HTTPServer) {
       }
     );
 
-    // -----------------------------------------------------------------------
-    // conversation:return-to-ai — agent returns conversation to AI
-    // -----------------------------------------------------------------------
     socket.on(
       "conversation:return-to-ai",
       async ({ conversationId }, ack) => {
@@ -405,14 +407,17 @@ export function initSocketServer(httpServer: HTTPServer) {
           if (!result)
             return ack({ ok: false, error: "Cannot return to AI" });
 
-          // Inform LangGraph that the human has disconnected so it doesn't think it already escalated
+          // Use updateState to inject a message indicating the human has returned control
           try {
-
             const graph = await getCompiledGraph();
             const config = { configurable: { thread_id: result.conversation.visitorId } };
 
             await graph.updateState(config, {
-              messages: [new SystemMessage("SYSTEM STATUS: The human support agent has disconnected and returned the chat to AI mode. You are now back in control. If the user asks for a human again, you MUST call the escalate_to_human tool AGAIN.")]
+              messages: [
+                new SystemMessage(
+                  "[SYSTEM NOTIFICATION]: The human session has ended and the chat is back in AI mode. Resume normal conversation. Do not escalate to a human unless the user explicitly asks for it again."
+                )
+              ]
             });
           } catch (e) {
             console.error("Failed to update LangGraph state on return to AI:", e);
@@ -469,6 +474,22 @@ export function initSocketServer(httpServer: HTTPServer) {
         });
 
         if (!result) return ack({ ok: false, error: "Cannot resolve" });
+
+        // Use updateState to inject a message indicating the human has resolved the issue
+        try {
+          const graph = await getCompiledGraph();
+          const config = { configurable: { thread_id: result.conversation.visitorId } };
+
+          await graph.updateState(config, {
+            messages: [
+              new SystemMessage(
+                "[SYSTEM NOTIFICATION]: The human support agent has resolved the issue and ended the session. The user may ask new questions."
+              )
+            ]
+          });
+        } catch (e) {
+          console.error("Failed to update LangGraph state on resolve:", e);
+        }
 
         const sysMsg = serializeMessage(result.systemMessage);
         io!

@@ -25,9 +25,11 @@ export type { FormattedTeamMember as TeamMemberItem };
 interface TeamClientViewProps {
   members: FormattedTeamMember[];
   workspaceName: string;
+  role?: string;
 }
 
-export function TeamClientView({ members, workspaceName }: TeamClientViewProps) {
+export function TeamClientView({ members, workspaceName, role: userRole }: TeamClientViewProps) {
+  const isAgent = userRole === "agent";
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("agent");
   const [invited, setInvited] = useState(false);
@@ -208,13 +210,14 @@ export function TeamClientView({ members, workspaceName }: TeamClientViewProps) 
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="agent@company.com"
+              disabled={isAgent}
+              placeholder="colleague@company.com"
               className="pl-10 h-11 rounded-xl text-[14px] bg-background border-border/50"
             />
           </div>
 
-          <Select value={inviteRole} onValueChange={(val) => setInviteRole(val || "agent")}>
-            <SelectTrigger className="h-11 rounded-xl text-[13.5px] font-semibold w-32 bg-background border-border/50 capitalize">
+          <Select value={inviteRole} onValueChange={(val) => setInviteRole(val || "agent")} disabled={isAgent}>
+            <SelectTrigger className="w-full sm:w-[160px] h-11 rounded-xl bg-background border-border/50 text-[13.5px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-xl shadow-lg min-w-[120px]">
@@ -226,8 +229,9 @@ export function TeamClientView({ members, workspaceName }: TeamClientViewProps) 
 
           <Button
             type="submit"
-            disabled={isLoading || invited}
-            className="bg-brand text-white hover:bg-brand/85 rounded-full h-11 px-7 font-semibold text-[14px] shadow-sm cursor-pointer shrink-0 disabled:opacity-70"
+            disabled={isLoading || invited || isAgent}
+            title={isAgent ? "Only admins and owners can invite new members" : undefined}
+            className={`h-11 rounded-xl bg-brand text-white font-bold shadow-md shadow-brand/20 transition-all shrink-0 sm:w-[160px] ${isAgent ? 'cursor-not-allowed opacity-50' : 'hover:bg-brand/90 cursor-pointer'}`}
           >
             {isLoading ? (
               "Sending..."

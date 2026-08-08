@@ -12,6 +12,7 @@ export interface ResolvedContext {
   user: IUser;
   workspace: IWorkspace;
   workspaceId: string; // human-readable ws_xxxx
+  role: "owner" | "admin" | "agent";
 }
 
 
@@ -41,5 +42,6 @@ export async function resolveUserWorkspace(): Promise<ResolvedContext | null> {
     user,
     workspace,
     workspaceId: workspace.workspaceId, // human-readable ws_xxxx
+    role: membership.role,
   };
 }

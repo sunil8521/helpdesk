@@ -1,13 +1,8 @@
-// ---------------------------------------------------------------------------
-// Routing Service — central authority for all conversation routing changes
-// Every status change (ai→waiting→human→ai→resolved) goes through here.
-// No socket handler, server action, or AI tool should mutate status directly.
-// ---------------------------------------------------------------------------
-
 import { Conversation, type IConversation } from "@/lib/db/models/Conversation";
 import { Message, type IMessage } from "@/lib/db/models/Message";
 import { connectToDatabase } from "@/lib/db/connect";
 import mongoose from "mongoose";
+import { emitRouteChangedEvent, emitListUpdateWithData } from "./socket-notify";
 
 // ---------------------------------------------------------------------------
 // Helper: get next sequence number for a conversation
@@ -31,7 +26,6 @@ export async function createMessage(params: {
   senderUserId?: string;
   content: string;
   clientMessageId?: string;
-  citations?: { title: string; sourceId?: string }[];
 }): Promise<IMessage> {
   await connectToDatabase();
 
@@ -55,7 +49,6 @@ export async function createMessage(params: {
       senderUserId: params.senderUserId || undefined,
       content: params.content,
       clientMessageId: params.clientMessageId || undefined,
-      citations: params.citations || undefined,
       sequence: seq,
     });
 
@@ -102,7 +95,6 @@ export async function requestHumanHandoff(params: {
   const systemMsg = await Message.create({
     conversationId: convo._id,
     workspaceId: convo.workspaceId,
-    clientMessageId: `sys-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     senderType: "system",
     content: "A support agent has been notified.",
     sequence: seq,
@@ -113,6 +105,21 @@ export async function requestHumanHandoff(params: {
       reason: params.reason,
     },
   });
+
+  // Emit directly to sockets using the data we just created/updated (zero extra DB reads!)
+  emitRouteChangedEvent(
+    convo.workspaceId.toString(),
+    convo._id.toString(),
+    convo.status,
+    convo.routingVersion,
+    {
+      content: systemMsg.content,
+      senderType: systemMsg.senderType,
+      createdAt: systemMsg.createdAt?.toISOString?.() || new Date().toISOString(),
+    }
+  ).catch(console.error);
+  
+  emitListUpdateWithData(convo, systemMsg).catch(console.error);
 
   return { conversation: convo, systemMessage: systemMsg };
 }
@@ -150,7 +157,6 @@ export async function claimConversation(params: {
   const systemMsg = await Message.create({
     conversationId: convo._id,
     workspaceId: convo.workspaceId,
-    clientMessageId: `sys-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     senderType: "system",
     content: `${agentName} joined the conversation.`,
     sequence: seq,
@@ -201,7 +207,6 @@ export async function assignConversation(params: {
   const systemMsg = await Message.create({
     conversationId: convo._id,
     workspaceId: convo.workspaceId,
-    clientMessageId: `sys-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     senderType: "system",
     content: `Conversation assigned to ${agentName}.`,
     sequence: seq,
@@ -254,7 +259,6 @@ export async function returnConversationToAi(params: {
   const systemMsg = await Message.create({
     conversationId: convo._id,
     workspaceId: convo.workspaceId,
-    clientMessageId: `sys-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     senderType: "system",
     content: "AI assistant resumed the conversation.",
     sequence: seq,
@@ -298,7 +302,6 @@ export async function resolveConversation(params: {
   const systemMsg = await Message.create({
     conversationId: convo._id,
     workspaceId: convo.workspaceId,
-    clientMessageId: `sys-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     senderType: "system",
     content: "This conversation was marked as resolved.",
     sequence: seq,

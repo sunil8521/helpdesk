@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,17 @@ export function ForgotPasswordFlow() {
   // UI State
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCountdown > 0) {
+      timer = setInterval(() => {
+        setResendCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
 
   const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +51,7 @@ export function ForgotPasswordFlow() {
         setServerError(res.error);
       } else {
         setStep("verify");
+        setResendCountdown(60);
       }
     } catch (err: any) {
       setServerError("An error occurred. Please try again.");
@@ -158,17 +170,30 @@ export function ForgotPasswordFlow() {
             <p className="text-[11.5px] text-foreground/40 mt-1">Enter the 6-digit code sent to {email}.</p>
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-brand text-white hover:bg-brand/85 rounded-full h-11 text-[15px] font-semibold shadow-md shadow-brand/15 cursor-pointer transition-all mt-2"
-          >
-            {loading ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</>
-            ) : (
-              <>Verify Code <ArrowRight className="ml-2 h-4 w-4" /></>
-            )}
-          </Button>
+          <div className="space-y-3">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-brand text-white hover:bg-brand/85 rounded-full h-11 text-[15px] font-semibold shadow-md shadow-brand/15 cursor-pointer transition-all mt-2"
+            >
+              {loading ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</>
+              ) : (
+                <>Verify Code <ArrowRight className="ml-2 h-4 w-4" /></>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading || resendCountdown > 0}
+              onClick={handleRequestCode}
+              className="w-full rounded-full h-11 text-[14px] font-semibold cursor-pointer transition-all"
+            >
+              {resendCountdown > 0 
+                ? `Resend available in ${resendCountdown}s` 
+                : "Didn't receive it? Resend Code"}
+            </Button>
+          </div>
         </form>
       )}
 

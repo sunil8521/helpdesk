@@ -16,6 +16,8 @@ export interface IWorkspace extends Document {
   plan: "free" | "pro" | "enterprise";
   apiKeys: IApiKey[];
   nextVisitorNumber: number;
+  tokensUsed: number;
+  apiCallsUsed: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +39,8 @@ const WorkspaceSchema = new Schema<IWorkspace>(
     plan: { type: String, enum: ["free", "pro", "enterprise"], default: "pro" },
     apiKeys: [ApiKeySchema],
     nextVisitorNumber: { type: Number, default: 1 },
+    tokensUsed: { type: Number, default: 0 },
+    apiCallsUsed: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

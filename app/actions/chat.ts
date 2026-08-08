@@ -28,7 +28,6 @@ interface SerializedMessage {
   clientMessageId?: string;
   systemEventType?: SystemEventType;
   metadata?: Record<string, unknown>;
-  citations?: { title: string; sourceId?: string }[];
   createdAt: string;
 }
 
@@ -43,26 +42,18 @@ function serializeMsg(m: any): SerializedMessage {
     sequence: m.sequence || 0,
     clientMessageId: m.clientMessageId,
     systemEventType: m.systemEventType,
-    metadata: m.metadata,
-    citations: m.citations?.map((c: any) => ({
-      title: c.title,
-      sourceId: c.sourceId?.toString(),
-    })),
+    metadata: m.metadata
+      ? {
+        ...(typeof m.metadata.toJSON === "function" ? m.metadata.toJSON() : m.metadata),
+        actorUserId: m.metadata.actorUserId?.toString(),
+        assignedAgentUserId: m.metadata.assignedAgentUserId?.toString(),
+      }
+      : undefined,
     createdAt: m.createdAt?.toISOString?.() || new Date().toISOString(),
   };
 }
 
-// ---------------------------------------------------------------------------
-// Helper: invalidate inbox cache so dashboard fetches fresh conversation list
-// ---------------------------------------------------------------------------
-async function notifyDashboard(workspaceId: string) {
-  updateTag(`inbox-${workspaceId}`);
-  revalidatePath("/dashboard/inbox");
-}
 
-// ---------------------------------------------------------------------------
-// getChatHistory — widget loads on mount
-// ---------------------------------------------------------------------------
 export async function getChatHistory(sessionId: string, workspaceId?: string) {
   try {
     await connectToDatabase();
@@ -103,16 +94,13 @@ export async function getChatHistory(sessionId: string, workspaceId?: string) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// sendMessageToAi — visitor sends message in AI mode (NO socket)
-//
+
 // 1. Find or create conversation
 // 2. Save visitor message
 // 3. Run LangGraph (checkpoint remembers history)
 // 4. Save AI response
 // 5. If LLM escalated → return escalation info
 // 6. Notify dashboard
-// ---------------------------------------------------------------------------
 export async function sendMessageToAi(params: {
   sessionId: string;
   workspaceId: string;
@@ -190,13 +178,7 @@ export async function sendMessageToAi(params: {
     // Run LangGraph
     const agentConfig = await getAgentConfig(workspaceOid);
     if (!agentConfig) {
-      return {
-        ok: true,
-        visitorMessage: serializeMsg(visitorMsg),
-        aiMessage: null,
-        escalated: false,
-        error: "AI agent not configured",
-      };
+      return { ok: false, error: "Failed to load agent configuration" };
     }
 
     const preVersion = conversation.routingVersion;
@@ -224,40 +206,63 @@ export async function sendMessageToAi(params: {
       },
     };
 
-    const result = await graph.invoke(
-      { messages: [new HumanMessage(params.content)] },
-      config
-    );
+    let runTokensUsed = 0;
+    let runApiCalls = 0;
 
-    // Race guard: check if routing changed while AI was thinking
-    const currentState = await routingService.getRoutingState(conversationId);
-    if (!currentState || currentState.routingVersion !== preVersion) {
-      // Something changed while LLM was running, reload conversation
-      const fresh = await Conversation.findById(conversationId);
-      if (fresh && fresh.status !== "ai") {
-        // LLM escalated during invoke — get the system message
-        const sysMsg = await Message.findOne({
-          conversationId,
-          senderType: "system",
-          systemEventType: "handoff_requested",
-        })
-          .sort({ sequence: -1 })
-          .lean();
+    (config as any).callbacks = [
+      {
+        handleLLMEnd(output: any) {
+          runApiCalls += 1;
+          const tokenUsage = output.llmOutput?.estimatedTokenUsage || output.llmOutput?.tokenUsage;
+          if (tokenUsage) {
+            runTokensUsed += (tokenUsage.totalTokens || 0);
+          }
+        },
+      },
+    ];
 
-        // Notify dashboard about this new waiting conversation
-        notifyDashboard(workspaceOid).catch(console.error);
+    let result;
+    try {
+      result = await graph.invoke(
+        { messages: [new HumanMessage(params.content)] },
+        config
+      );
+    } catch (error: any) {
+      console.error("LangGraph error (possibly hit recursion limit):", error);
+      // If we hit the limit, just return a graceful fallback message
+      const fallbackMsg = await routingService.createMessage({
+        conversationId,
+        workspaceId: workspaceOid,
+        senderType: "ai",
+        content: "I'm having trouble processing that right now. Could you please rephrase?",
+      });
 
-        return {
-          ok: true,
-          visitorMessage: serializeMsg(visitorMsg),
-          aiMessage: null,
-          escalated: true,
-          newStatus: fresh.status,
-          systemMessages: sysMsg ? [serializeMsg(sysMsg)] : [],
-          conversationId,
-        };
+      // Update workspace API credits even if we hit the limit
+      if (runApiCalls > 0 || runTokensUsed > 0) {
+        await Workspace.findByIdAndUpdate(workspaceOid, {
+          $inc: { apiCallsUsed: runApiCalls, tokensUsed: runTokensUsed },
+        }).catch(console.error);
       }
+
+      return {
+        ok: true,
+        visitorMessage: serializeMsg(visitorMsg),
+        aiMessage: serializeMsg(fallbackMsg),
+        escalated: false,
+        newStatus: conversation.status,
+        systemMessages: [],
+        conversationId,
+      };
     }
+
+    // Save usage metrics to Workspace
+    if (runApiCalls > 0 || runTokensUsed > 0) {
+      await Workspace.findByIdAndUpdate(workspace._id, {
+        $inc: { apiCallsUsed: runApiCalls, tokensUsed: runTokensUsed },
+      });
+    }
+
+
 
     // Extract AI response text
     const lastMessage = result.messages[result.messages.length - 1];
@@ -274,33 +279,37 @@ export async function sendMessageToAi(params: {
       content: aiText,
     });
 
-    // Check if AI escalated during this run (tool changed status)
-    const refreshed = await Conversation.findById(conversationId);
-    if (refreshed && refreshed.status !== "ai") {
-      const sysMsg = await Message.findOne({
-        conversationId,
-        senderType: "system",
-        systemEventType: "handoff_requested",
-      })
-        .sort({ sequence: -1 })
-        .lean();
+    // To correctly check if a tool was called in THIS turn (and ignore old turns),
+    // we must look at all messages generated AFTER the user's latest message.
+    const lastHumanIdx = result.messages.findLastIndex((m: any) => m._getType() === "human");
+    const currentTurnMessages = result.messages.slice(lastHumanIdx + 1);
 
-      // Notify dashboard
-      notifyDashboard(workspaceOid).catch(console.error);
+    const escalateCall = currentTurnMessages
+      .flatMap((m: any) => m.tool_calls || [])
+      .find((tc: any) => tc.name === "escalate_to_human");
+
+    const escalated = !!escalateCall;
+
+    if (escalated) {
+      const reason = escalateCall.args?.reason || "User requested human handoff.";
+
+      // The AI decided to escalate, so we trigger the DB update and socket emits here.
+      // This centralizes the logic in one place (chat.ts) as requested!
+      const handoffResult = await routingService.requestHumanHandoff({
+        conversationId,
+        reason,
+      });
 
       return {
         ok: true,
         visitorMessage: serializeMsg(visitorMsg),
         aiMessage: serializeMsg(aiMsg),
         escalated: true,
-        newStatus: refreshed.status,
-        systemMessages: sysMsg ? [serializeMsg(sysMsg)] : [],
+        newStatus: "waiting",
+        systemMessages: handoffResult ? [serializeMsg(handoffResult.systemMessage)] : [],
         conversationId,
       };
     }
-
-    // Normal AI response — notify dashboard for list update
-    notifyDashboard(workspaceOid).catch(console.error);
 
     return {
       ok: true,

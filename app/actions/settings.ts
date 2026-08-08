@@ -13,6 +13,7 @@ import { invalidateAgentCache } from "@/lib/ai/agent-cache";
 export async function updateWorkspaceSettingsAction(data: { name: string }) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
+  if (ctx.role !== "owner") return { error: "Only the workspace owner can modify settings" };
 
   if (!data.name || data.name.trim().length < 2) {
     return { error: "Workspace name must be at least 2 characters" };
@@ -45,6 +46,7 @@ export async function updateAgentSettingsAction(data: {
 }) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
+  if (ctx.role !== "owner") return { error: "Only the workspace owner can modify settings" };
 
   if (!["escalate", "cannot"].includes(data.humanFallbackBehavior)) {
     return { error: "Invalid human fallback behavior option" };

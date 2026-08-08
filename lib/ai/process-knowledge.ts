@@ -6,6 +6,7 @@ import { createChunks } from "./chunker";
 import { r2Client, getR2PublicUrl } from "@/lib/r2";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
+
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "javarag";
 
 /**
@@ -27,27 +28,53 @@ export async function processKnowledgeSource(
     throw new Error(`KnowledgeSource ${sourceId} not found`);
   }
 
+  const emitProgress = async (status: "uploaded" | "queued" | "completed" | "failed" | "unable_to_queue", progress: number, error?: string, chunksCount?: number) => {
+    try {
+      await fetch("http://127.0.0.1:3000/api/internal/socket-emit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          room: `workspace:${workspaceId}:team`,
+          event: "knowledge:progress",
+          payload: {
+            sourceId,
+            status,
+            progress,
+            errorMessage: error,
+            chunksCount,
+          },
+        }),
+      });
+    } catch (e) {
+      console.error("Failed to emit socket progress:", e);
+    }
+  };
+
   try {
+    await emitProgress("queued", 10);
+    await KnowledgeSource.findByIdAndUpdate(sourceId, { progress: 10 });
     let rawText = "";
 
-    if (source.sourceType === "text") {
-      rawText = source.rawText || "";
-    } else if (source.sourceType === "url" || source.sourceType === "file") {
-      // For url and file sources, fetch from R2
-      if (source.r2Key) {
-        const r2Response = await r2Client.send(
-          new GetObjectCommand({
-            Bucket: R2_BUCKET_NAME,
-            Key: source.r2Key,
-          })
-        );
-        rawText = (await r2Response.Body?.transformToString("utf-8")) || "";
+    try {
+      if (source.sourceType === "text") {
+        rawText = source.rawText || "";
+      } else if (source.sourceType === "url" || source.sourceType === "file") {
+        // For url and file sources, fetch from R2
+        if (source.r2Key) {
+          const r2Response = await r2Client.send(
+            new GetObjectCommand({
+              Bucket: R2_BUCKET_NAME,
+              Key: source.r2Key,
+            })
+          );
+          rawText = (await r2Response.Body?.transformToString("utf-8")) || "";
+        }
       }
-    }
-
-
-    if (!rawText.trim()) {
-      throw new Error("No content found to process");
+      if (!rawText.trim()) {
+        throw new Error("No content found to process");
+      }
+    } catch (e: any) {
+      throw new Error(`[parse error] ${e.message}`);
     }
 
     // Create LangChain Document with workspace metadata
@@ -62,8 +89,15 @@ export async function processKnowledgeSource(
       },
     });
 
-    // Split into chunks
-    const chunks = await createChunks([rawDoc]);
+    let chunks;
+    try {
+      await emitProgress("queued", 50);
+      await KnowledgeSource.findByIdAndUpdate(sourceId, { progress: 50 });
+      // Split into chunks
+      chunks = await createChunks([rawDoc]);
+    } catch (e: any) {
+      throw new Error(`[chunk error] ${e.message}`);
+    }
 
     // Add chunk index to metadata
     const indexedChunks = chunks.map((chunk, idx) => {
@@ -80,21 +114,23 @@ export async function processKnowledgeSource(
 
     // Update KnowledgeSource status
     await KnowledgeSource.findByIdAndUpdate(sourceId, {
-      status: "ready",
+      status: "completed",
+      progress: 100,
       chunksCount: indexedChunks.length,
       errorMessage: "",
     });
+    await emitProgress("completed", 100, undefined, indexedChunks.length);
 
     return { success: true, chunksCount: indexedChunks.length };
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown processing error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown processing error";
     console.error(`Knowledge processing failed for ${sourceId}:`, errorMessage);
 
     await KnowledgeSource.findByIdAndUpdate(sourceId, {
       status: "failed",
       errorMessage,
     });
+    await emitProgress("failed", 0, errorMessage);
 
     return { success: false, error: errorMessage };
   }
@@ -132,6 +168,6 @@ export async function uploadScrapedContentToR2(params: {
     r2Key,
     fileSize: textBuffer.length,
     mimeType: "text/markdown",
-    status: "uploaded",
+    status: "queued",
   });
 }

@@ -21,7 +21,6 @@ export interface SocketMessage {
   clientMessageId?: string;
   systemEventType?: SystemEventType;
   metadata?: IMessageMetadata;
-  citations?: { title: string; sourceId?: string }[];
   createdAt: string;
 }
 
@@ -32,9 +31,11 @@ export interface SocketConversationRow {
   visitor: { name: string; email?: string; device?: string; currentPage?: string };
   status: "ai" | "waiting" | "human" | "resolved";
   assignedAgentUserId?: string;
+  assignedAgentName?: string;
   handoffReason?: string;
   routingVersion: number;
   lastMessage?: { content: string; senderType: string; createdAt: string };
+  createdAt?: string;
   updatedAt: string;
 }
 
@@ -94,6 +95,12 @@ export interface ServerToClientEvents {
   "message:created": (message: SocketMessage) => void;
   "conversation:route-changed": (change: SocketRouteChange) => void;
   "conversation:list-updated": (row: SocketConversationRow) => void;
+  "knowledge:progress": (data: {
+    sourceId: string;
+    status: "uploading" | "uploaded" | "queued" | "processing" | "completed" | "failed" | "unable_to_queue" | "unable_to_parse" | "unable_to_chunk";
+    progress?: number;
+    errorMessage?: string;
+  }) => void;
 }
 
 // ---------------------------------------------------------------------------

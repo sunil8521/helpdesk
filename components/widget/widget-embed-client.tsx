@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { X, MessageSquare, HelpCircle, Paperclip, RefreshCw, ArrowRight, UserCheck, Bot, Headphones, Info } from "lucide-react";
+import { X, MessageSquare, HelpCircle, Paperclip, RefreshCw, ArrowRight, Bot, Headphones, Info, ChevronDown } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import {
   getChatHistory,
@@ -37,6 +37,8 @@ interface WidgetEmbedClientProps {
     name?: string;
     role?: string;
   } | null;
+  initialFaqs?: any[];
+  previewMode?: boolean;
 }
 
 interface ChatMessage {
@@ -46,6 +48,7 @@ interface ChatMessage {
   sequence: number;
   pending?: boolean;
   clientMessageId?: string;
+  failed?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,9 +60,12 @@ export function WidgetEmbedClient({
   agent,
   ssoEmail,
   ssoName,
+  initialFaqs = [],
+  previewMode = false,
 }: WidgetEmbedClientProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(previewMode);
   const [activeTab, setActiveTab] = useState<"chat" | "faq">("chat");
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [inputMsg, setInputMsg] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -137,15 +143,15 @@ export function WidgetEmbedClient({
                 .map((m) =>
                   m.clientMessageId === msg.clientMessageId
                     ? {
-                        _id: msg._id,
-                        sender:
-                          msg.senderType === "visitor"
-                            ? ("user" as const)
-                            : msg.senderType,
-                        text: msg.content,
-                        sequence: msg.sequence,
-                        clientMessageId: msg.clientMessageId,
-                      }
+                      _id: msg._id,
+                      sender:
+                        msg.senderType === "visitor"
+                          ? ("user" as const)
+                          : msg.senderType,
+                      text: msg.content,
+                      sequence: msg.sequence,
+                      clientMessageId: msg.clientMessageId,
+                    }
                     : m
                 )
                 .sort((a, b) => a.sequence - b.sequence);
@@ -186,7 +192,7 @@ export function WidgetEmbedClient({
           });
           setIsLoading(false);
 
-          // If returned to AI, disconnect socket
+          // If returned to AI, disconnect socket (save resources)
           if (change.status === "ai") {
             disconnectSocket();
           }
@@ -229,15 +235,23 @@ export function WidgetEmbedClient({
       if (result.conversationId) setConversationId(result.conversationId);
 
       if (result.success && result.messages && result.messages.length > 0) {
-        setMessages(
-          result.messages.map((m: any) => ({
+        const greetingMsg = {
+          _id: "greeting",
+          sender: "ai" as const,
+          text: config?.greeting!,
+          sequence: -1,
+        };
+
+        setMessages([
+          greetingMsg,
+          ...result.messages.map((m: any) => ({
             _id: m._id || uuidv4(),
             sender: m.senderType === "visitor" ? "user" : m.senderType,
             text: m.content,
             sequence: m.sequence || 0,
             clientMessageId: m.clientMessageId,
           }))
-        );
+        ]);
       } else {
         setMessages([
           {
@@ -327,7 +341,7 @@ export function WidgetEmbedClient({
           setMessages((prev) =>
             prev.map((m) =>
               m.clientMessageId === clientMessageId
-                ? { ...m, pending: false, text: `${m.text} (failed to send)` }
+                ? { ...m, pending: false, failed: true }
                 : m
             )
           );
@@ -340,12 +354,12 @@ export function WidgetEmbedClient({
             prev.map((m) =>
               m.clientMessageId === clientMessageId
                 ? {
-                    _id: result.visitorMessage!._id,
-                    sender: "user",
-                    text: result.visitorMessage!.content,
-                    sequence: result.visitorMessage!.sequence,
-                    clientMessageId,
-                  }
+                  _id: result.visitorMessage!._id,
+                  sender: "user",
+                  text: result.visitorMessage!.content,
+                  sequence: result.visitorMessage!.sequence,
+                  clientMessageId,
+                }
                 : m
             )
           );
@@ -421,10 +435,10 @@ export function WidgetEmbedClient({
               prev.map((m) =>
                 m.clientMessageId === clientMessageId
                   ? {
-                      ...m,
-                      pending: false,
-                      text: `${m.text} (failed to send)`,
-                    }
+                    ...m,
+                    pending: false,
+                    failed: true,
+                  }
                   : m
               )
             );
@@ -502,10 +516,10 @@ export function WidgetEmbedClient({
     routeStatus === "ai"
       ? "AI"
       : routeStatus === "waiting"
-      ? "Connecting…"
-      : routeStatus === "human"
-      ? "Human"
-      : "Resolved";
+        ? "Connecting…"
+        : routeStatus === "human"
+          ? "Human"
+          : "Resolved";
 
   return (
     <div className="w-full h-full flex flex-col justify-end select-none font-sans overflow-hidden bg-transparent">
@@ -540,15 +554,15 @@ export function WidgetEmbedClient({
                   </span>
                   {(routeStatus === "waiting" ||
                     routeStatus === "human") && (
-                    <span
-                      title={
-                        socketConnected
-                          ? "Realtime connected"
-                          : "Realtime reconnecting"
-                      }
-                      className={`h-1.5 w-1.5 rounded-full ${socketConnected ? "bg-emerald-200" : "bg-white/40"}`}
-                    />
-                  )}
+                      <span
+                        title={
+                          socketConnected
+                            ? "Realtime connected"
+                            : "Realtime reconnecting"
+                        }
+                        className={`h-1.5 w-1.5 rounded-full ${socketConnected ? "bg-emerald-200" : "bg-white/40"}`}
+                      />
+                    )}
                 </div>
                 <div className="text-[11.5px] font-medium opacity-80 truncate">
                   {agentRole}
@@ -606,15 +620,19 @@ export function WidgetEmbedClient({
                       </div>
                     </div>
                   ) : (
-                    <div key={m._id} className="flex justify-end">
+                    <div key={m._id} className="flex flex-col items-end">
                       <div
-                        className={`max-w-[85%] rounded-2xl rounded-br-xs px-3.5 py-2.5 text-[12.5px] text-white leading-relaxed shadow-xs ${
-                          m.pending ? "opacity-60" : ""
-                        }`}
+                        className={`max-w-[85%] rounded-2xl rounded-br-xs px-3.5 py-2.5 text-[12.5px] text-white leading-relaxed shadow-xs ${m.pending ? "opacity-60" : ""
+                          }`}
                         style={{ background: buttonColor }}
                       >
                         {m.text}
                       </div>
+                      {m.failed && (
+                        <span className="text-[10.5px] font-medium text-red-500 mt-1 mr-1">
+                          Failed to send
+                        </span>
+                      )}
                     </div>
                   );
                 })}
@@ -660,7 +678,6 @@ export function WidgetEmbedClient({
                   className="p-3 border-t border-border/20 flex items-center gap-2.5 bg-background"
                 >
                   <div className="flex-1 h-11 px-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex items-center gap-2 focus-within:bg-white focus-within:border-slate-300 focus-within:shadow-sm transition-all duration-200">
-                    <Paperclip className="h-4 w-4 text-slate-400 shrink-0 cursor-pointer hover:text-slate-600 transition-colors" />
                     <input
                       value={inputMsg}
                       onChange={(e) => setInputMsg(e.target.value)}
@@ -687,14 +704,36 @@ export function WidgetEmbedClient({
               )}
             </>
           ) : (
-            <div className="flex-1 overflow-y-auto scrollbar-none bg-background p-4 flex flex-col">
-              <h3 className="font-semibold text-[13px] text-foreground mb-3 shrink-0">
-                Frequently Asked Questions
-              </h3>
-              <div className="flex-1 flex flex-col items-center justify-center text-center text-foreground/50 pb-10">
-                <HelpCircle className="h-8 w-8 mb-2 opacity-50" />
-                <p className="text-[12px]">No FAQs available yet.</p>
-              </div>
+            <div className="flex-1 overflow-y-auto scrollbar-none bg-background p-4 flex flex-col space-y-3">
+              {initialFaqs.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-foreground/50 pb-10">
+                  <HelpCircle className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-[12px]">No FAQs available yet.</p>
+                </div>
+              ) : (
+                initialFaqs.map((faq) => (
+                  <div key={faq._id} className="bg-muted/30 rounded-2xl border border-border/50 text-left overflow-hidden transition-all duration-200">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaqId(openFaqId === faq._id ? null : faq._id)}
+                      className="w-full flex items-center justify-between p-3.5 text-left focus:outline-none"
+                    >
+                      <h4 className="text-[13px] font-bold text-foreground pr-4">{faq.question}</h4>
+                      <ChevronDown
+                        className={`h-4 w-4 text-foreground/50 transition-transform duration-200 shrink-0 ${openFaqId === faq._id ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    
+                    <div 
+                      className={`px-3.5 pb-3.5 text-[12px] text-foreground/70 leading-relaxed transition-all duration-300 origin-top ${
+                        openFaqId === faq._id ? "block animate-in fade-in slide-in-from-top-2" : "hidden"
+                      }`}
+                    >
+                      {faq.answer}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
@@ -703,11 +742,10 @@ export function WidgetEmbedClient({
             <button
               type="button"
               onClick={() => setActiveTab("chat")}
-              className={`flex-1 flex flex-col items-center gap-0.5 ${
-                activeTab === "chat"
+              className={`flex-1 flex flex-col items-center gap-0.5 ${activeTab === "chat"
                   ? "font-bold text-foreground"
                   : "hover:text-foreground"
-              }`}
+                }`}
             >
               <MessageSquare
                 className="h-3.5 w-3.5"
@@ -718,11 +756,10 @@ export function WidgetEmbedClient({
             <button
               type="button"
               onClick={() => setActiveTab("faq")}
-              className={`flex-1 flex flex-col items-center gap-0.5 ${
-                activeTab === "faq"
+              className={`flex-1 flex flex-col items-center gap-0.5 ${activeTab === "faq"
                   ? "font-bold text-foreground"
                   : "hover:text-foreground"
-              }`}
+                }`}
             >
               <HelpCircle
                 className="h-3.5 w-3.5"

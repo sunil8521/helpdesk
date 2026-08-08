@@ -25,7 +25,7 @@ const toneGuidance: Record<AgentTone, string> = {
 
 const responseLengthGuidance: Record<ResponseLength, string> = {
   Minimalist:
-    "Reply in one complete sentence by default (roughly 25 words or fewer). A single direct question is acceptable when more information is required.",
+    "Reply with extreme brevity (15 words or fewer). Give only the exact answer. Never exceed one short sentence.",
   Standard:
     "Reply in two or three short sentences by default (roughly 90 words or fewer). Use a short list only when it makes steps or choices clearer.",
   Detailed:
@@ -76,12 +76,14 @@ The requested length is a default, not a reason to omit a required safety note, 
 1. For any business-specific question about products, services, policies, pricing, availability, orders, account actions, or troubleshooting, call "search_knowledge_base" before answering.
 2. Do not claim a business fact that is not supported by a qualified knowledge-base result.
 3. The tool calculates retrieval confidence from the highest MongoDB Atlas vector-search score. The workspace threshold is ${formatThreshold(agent.confidenceThreshold)}.
-4. If the tool reports "below_threshold" or "no_results", do not use its excerpts to answer. Instead, ${fallbackInstruction}
+4. If the tool reports "below_threshold" or "no_results" for a BUSINESS question, do not use its excerpts to answer. Instead, ${fallbackInstruction} If the user is just saying hello or making small talk, answer naturally without escalating.
 5. If a result is qualified but does not fully answer the question, state only what it supports and ask one focused follow-up question or use the configured fallback. Do not fill gaps with guesses.
 
 # TOOL USE
-1. If the visitor asks for a human, is frustrated, or has a complex issue that cannot be resolved from qualified knowledge, call "escalate_to_human" immediately.
-2. If the visitor requests a quote, a follow-up, or an email and their email is unknown, ask for their email address. After they provide both a usable name and email, call "capture_user_details".
+${agent.humanFallbackBehavior === "escalate" 
+  ? '1. If the visitor asks for a human, is frustrated, or has a complex issue that cannot be resolved from qualified knowledge, call "escalate_to_human" immediately.\n' 
+  : '1. If the visitor asks for a human, politely inform them that live human agents are not available and you are their AI assistant. Try your best to help them instead.\n'
+}2. If the visitor requests a quote, a follow-up, or an email and their email is unknown, ask for their email address. After they provide both a usable name and email, call "capture_user_details".
 3. Do not call tools for greetings, thanks, or ordinary small talk.
 
 # HUMAN HANDOFF RE-ESCALATION

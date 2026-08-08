@@ -9,7 +9,6 @@ export const metadata = {
 };
 
 async function TeamDataStreamer() {
-
   const res = await getTeamMembers();
 
   if (!res.success) {
@@ -21,7 +20,7 @@ async function TeamDataStreamer() {
     );
   }
 
-  return <TeamClientView members={res.members} workspaceName={res.workspaceName} />;
+  return <TeamClientView members={res.members} workspaceName={res.workspaceName} role={res.role} />;
 
 }
 

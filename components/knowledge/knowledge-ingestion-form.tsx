@@ -35,7 +35,7 @@ export function KnowledgeIngestionForm({
   const handleSaveText = async () => {
     if (!textInput.trim()) return;
     setIsSavingSource(true);
-    
+
     const promise = createKnowledgeSourceAction({
       type: "text",
       title: "Raw Text Guidelines",
@@ -62,7 +62,7 @@ export function KnowledgeIngestionForm({
   const handleSaveUrl = async () => {
     if (!urlInput.trim()) return;
     setIsSavingSource(true);
-    
+
     const promise = createKnowledgeSourceAction({
       type: "url",
       title: urlInput.trim(),
@@ -91,7 +91,7 @@ export function KnowledgeIngestionForm({
     if (!file) return;
 
     setIsSavingSource(true);
-    
+
     const promise = (async () => {
       // 1. Validate magic bytes to prevent spoofing
       await validateFileSignature(file);
@@ -132,7 +132,7 @@ export function KnowledgeIngestionForm({
     return (
       <div className="space-y-4 animate-in fade-in-50 duration-200">
         <Label className="text-[13.5px] font-semibold text-foreground/70">Add new knowledge source:</Label>
-        
+
         {/* Option 1: Raw Text Knowledge */}
         <button
           type="button"

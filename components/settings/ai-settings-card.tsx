@@ -24,11 +24,13 @@ interface AISettingsCardProps {
     confidenceThreshold: number;
     humanFallbackBehavior: "escalate" | "cannot";
   };
+  role?: string;
 }
 
 import { Input } from "@/components/ui/input";
 
-export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
+export function AISettingsCard({ initialAgent, role: userRole }: AISettingsCardProps) {
+  const isOwner = userRole === "owner";
   const router = useRouter();
   const [name, setName] = useState(initialAgent.name);
   const [role, setRole] = useState(initialAgent.role);
@@ -80,19 +82,21 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-[13.5px] font-semibold">Agent Name</Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+            <Input 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
               placeholder="e.g. Maya"
+              disabled={!isOwner}
               className="h-11 rounded-xl bg-background border-border/50 text-[14px]"
             />
           </div>
           <div className="space-y-2">
             <Label className="text-[13.5px] font-semibold">Agent Role</Label>
-            <Input
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+            <Input 
+              value={role} 
+              onChange={(e) => setRole(e.target.value)} 
               placeholder="e.g. Customer Support Specialist"
+              disabled={!isOwner}
               className="h-11 rounded-xl bg-background border-border/50 text-[14px]"
             />
           </div>
@@ -104,6 +108,7 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={!isOwner}
             rows={3}
             placeholder="Describe the agent's responsibilities, guidelines, and context..."
             className="w-full p-3 rounded-xl bg-background border border-border/50 text-[13.5px] leading-relaxed outline-none focus:border-brand transition-colors"
@@ -117,6 +122,7 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
             <Select
               value={tone}
               onValueChange={(val) => setTone(val as any)}
+              disabled={!isOwner}
             >
               <SelectTrigger className="h-11 rounded-xl bg-background border-border/50 text-[14px]">
                 <SelectValue />
@@ -135,6 +141,7 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
             <Select
               value={responseLength}
               onValueChange={(val) => setResponseLength(val as any)}
+              disabled={!isOwner}
             >
               <SelectTrigger className="h-11 rounded-xl bg-background border-border/50 text-[14px]">
                 <SelectValue />
@@ -175,6 +182,7 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
             onValueChange={(val) => setTemperature(Array.isArray(val) ? [...val] : [val])}
             max={100}
             step={5}
+            disabled={!isOwner}
             className="py-2"
           />
           <p className="text-[12px] text-foreground/45">
@@ -195,6 +203,7 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
             onValueChange={(val) => setConfidence(Array.isArray(val) ? [...val] : [val])}
             max={100}
             step={5}
+            disabled={!isOwner}
             className="py-2"
           />
           <p className="text-[12px] text-foreground/45">
@@ -208,6 +217,7 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
           <Select
             value={fallbackBehavior}
             onValueChange={(val) => setFallbackBehavior(val as "escalate" | "cannot")}
+            disabled={!isOwner}
           >
             <SelectTrigger className="h-11 rounded-xl bg-background border-border/50 text-[14px]">
               <SelectValue />
@@ -222,8 +232,9 @@ export function AISettingsCard({ initialAgent }: AISettingsCardProps) {
         <div className="flex justify-end pt-2 border-t border-border/30">
           <Button
             onClick={handleSaveAISettings}
-            disabled={isSaving}
-            className="bg-brand text-white hover:bg-brand/85 rounded-full h-10 px-6 font-semibold text-[13.5px] shadow-xs cursor-pointer"
+            disabled={isSaving || !name.trim() || !isOwner}
+            title={!isOwner ? "Only workspace owners can update settings" : undefined}
+            className={`h-10 px-5 rounded-xl bg-brand text-white font-bold shadow-md shadow-brand/20 transition-all ${!isOwner ? 'cursor-not-allowed opacity-50' : 'hover:bg-brand/90 cursor-pointer'}`}
           >
             {isSaving ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving AI Settings...</>

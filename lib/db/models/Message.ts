@@ -26,7 +26,6 @@ export interface IMessage extends Document {
   senderType: "visitor" | "ai" | "agent" | "system";
   senderUserId?: mongoose.Types.ObjectId; // If senderType === 'agent'
   content: string;
-  citations?: ICitation[];
 
   // Realtime fields
   sequence: number;
@@ -36,11 +35,6 @@ export interface IMessage extends Document {
 
   createdAt: Date;
 }
-
-const CitationSchema = new Schema<ICitation>({
-  title: { type: String, required: true },
-  sourceId: { type: Schema.Types.ObjectId, ref: "KnowledgeSource" },
-});
 
 const MessageMetadataSchema = new Schema<IMessageMetadata>(
   {
@@ -64,7 +58,6 @@ const MessageSchema = new Schema<IMessage>(
     },
     senderUserId: { type: Schema.Types.ObjectId, ref: "User" },
     content: { type: String, required: true },
-    citations: [CitationSchema],
 
     // Realtime fields
     sequence: { type: Number, required: true, default: 0 },
@@ -82,7 +75,7 @@ const MessageSchema = new Schema<IMessage>(
 // Idempotency index: prevent duplicate messages from unstable connections
 MessageSchema.index(
   { conversationId: 1, clientMessageId: 1 },
-  { unique: true, sparse: true }
+  { unique: true, partialFilterExpression: { clientMessageId: { $type: "string" } } }
 );
 
 export const Message: Model<IMessage> =

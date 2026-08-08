@@ -8,8 +8,8 @@ import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 export async function getWorkspaceAndAgentSettings() {
   const ctx = await resolveUserWorkspace();
   if (!ctx) throw new Error("Unauthorized");
-
-  return fetchWorkspaceAndAgentCached(ctx.workspace._id.toString());
+  const data = await fetchWorkspaceAndAgentCached(ctx.workspace._id.toString());
+  return { ...data, role: ctx.role };
 }
 
 // 2. Cached data layer (takes string primitive, no request objects)
@@ -35,6 +35,8 @@ async function fetchWorkspaceAndAgentCached(workspaceId: string) {
       name: workspace.name,
       slug: workspace.slug,
       plan: workspace.plan,
+      tokensUsed: workspace.tokensUsed || 0,
+      apiCallsUsed: workspace.apiCallsUsed || 0,
     },
     agent: {
       id: agent._id.toString(),

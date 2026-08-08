@@ -12,7 +12,8 @@ export interface IKnowledgeSource extends Document {
   rawText?: string;                 // Raw text content for sourceType === 'text'
   fileSize?: number;                // Size in bytes
   mimeType?: string;                // e.g. 'application/pdf', 'text/plain', 'text/html'
-  status: "pending" | "uploaded" | "processing" | "ready" | "failed";
+  status:  "uploaded" | "queued" | "completed" | "failed" | "unable_to_queue" ;
+  progress?: number;
   chunksCount: number;
   errorMessage?: string;
   uploaderUserId?: mongoose.Types.ObjectId;
@@ -36,10 +37,10 @@ const KnowledgeSourceSchema = new Schema<IKnowledgeSource>(
     rawText: { type: String, default: "" },
     fileSize: { type: Number, default: 0 },
     mimeType: { type: String, default: "text/plain" },
+    progress: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "uploaded", "processing", "ready", "failed"],
-      default: "pending",
+      enum: [ "uploaded", "queued", "completed", "failed", "unable_to_queue"],
       index: true,
     },
     chunksCount: { type: Number, default: 0 },
@@ -48,6 +49,10 @@ const KnowledgeSourceSchema = new Schema<IKnowledgeSource>(
   },
   { timestamps: true }
 );
+
+if (process.env.NODE_ENV !== "production") {
+  delete mongoose.models.KnowledgeSource;
+}
 
 export const KnowledgeSource: Model<IKnowledgeSource> =
   mongoose.models.KnowledgeSource || mongoose.model<IKnowledgeSource>("KnowledgeSource", KnowledgeSourceSchema);

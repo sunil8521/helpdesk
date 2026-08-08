@@ -2,7 +2,6 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { Conversation } from "../db/models/Conversation";
 import { searchWorkspaceVectorsWithScores } from "./vector-store";
-import * as routingService from "../chat/routing-service";
 import type { HumanFallbackBehavior } from "./agent-instructions";
 
 const MAX_CONTEXT_CHARS_PER_RESULT = 1_200;
@@ -62,34 +61,10 @@ export const escalateToHumanTool = new DynamicStructuredTool({
     reason: z.string().describe("The specific reason the user needs a human agent"),
   }),
   func: async ({ reason }, runManager, config) => {
-    const sessionId = config?.configurable?.thread_id;
-    const conversationId = config?.configurable?.conversationId as string | undefined;
-    if (!sessionId) return "Error: Missing session ID";
-
-    try {
-      // Find conversation by visitorId (sessionId) if conversationId not provided
-      let convoId = conversationId;
-      if (!convoId) {
-        const convo = await Conversation.findOne({ visitorId: sessionId });
-        if (!convo) return "Failed to escalate. Conversation not found.";
-        convoId = convo._id.toString();
-      }
-
-      // Use routing service instead of direct status mutation
-      const result = await routingService.requestHumanHandoff({
-        conversationId: convoId,
-        reason,
-      });
-
-      if (result) {
-        return `Escalated to human support successfully. Reason: ${reason}. Please inform the user that a human agent has been notified and will be with them shortly.`;
-      }
-
-      return "Failed to escalate. Conversation may not be in AI mode.";
-    } catch (e) {
-      console.error("Escalation error:", e);
-      return "Error during escalation.";
-    }
+    // We just return a success string here.
+    // The actual database mutation, system message creation, and socket emit 
+    // will be handled centrally in chat.ts after the graph finishes.
+    return `Escalated to human support successfully. Reason: ${reason}. Please inform the user that a human agent has been notified and will be with them shortly.`;
   },
 });
 
@@ -117,10 +92,7 @@ export const searchKnowledgeBaseTool = new DynamicStructuredTool({
             confidence: Number(confidence.toFixed(4)),
             threshold,
           },
-          requiredAction:
-            fallbackBehavior === "escalate"
-              ? "Do not answer from the knowledge base. Call escalate_to_human now."
-              : "Do not answer from the knowledge base. State that the answer cannot be verified from the available information.",
+          note: "No relevant business knowledge found for this query. If this was a business question, please follow your fallback instructions. If this was just casual chat, respond naturally.",
         });
       }
 
@@ -143,10 +115,7 @@ export const searchKnowledgeBaseTool = new DynamicStructuredTool({
       return JSON.stringify({
         source: "knowledge_base",
         retrieval: { status: "unavailable", confidence: 0, threshold },
-        requiredAction:
-          fallbackBehavior === "escalate"
-            ? "Do not guess. Call escalate_to_human because the knowledge base is unavailable."
-            : "Do not guess. State that the answer cannot be verified right now.",
+        note: "Knowledge base is temporarily unavailable.",
       });
     }
   },

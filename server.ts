@@ -18,6 +18,25 @@ async function main() {
   await app.prepare();
 
   const httpServer = createServer((req, res) => {
+    if (req.url === "/api/internal/socket-emit" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", () => {
+        try {
+          const data = JSON.parse(body);
+          const io = require("./lib/chat/socket-server").getIO();
+          if (io && data.room && data.event && data.payload) {
+            io.to(data.room).emit(data.event, data.payload);
+          }
+          res.writeHead(200);
+          res.end("ok");
+        } catch (e) {
+          res.writeHead(500);
+          res.end("error");
+        }
+      });
+      return;
+    }
     handle(req, res);
   });
 
