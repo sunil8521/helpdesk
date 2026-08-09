@@ -51,32 +51,32 @@ export const AVATAR_OPTIONS = [
   {
     id: "bot1",
     name: "Maya",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Maya",
+    url: "https://api.dicebear.com/10.x/open-peeps/svg?seed=Maya",
   },
   {
     id: "bot2",
     name: "Apex",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Apex",
+    url: "https://api.dicebear.com/10.x/open-peeps/svg?seed=Apex",
   },
   {
     id: "bot3",
     name: "Echo",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Echo",
+    url: "https://api.dicebear.com/10.x/open-peeps/svg?seed=Echo",
   },
   {
     id: "bot4",
     name: "Sparky",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Sparky",
+    url: "https://api.dicebear.com/10.x/open-peeps/svg?seed=Sparky",
   },
   {
     id: "bot5",
     name: "Gizmo",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Gizmo",
+    url: "https://api.dicebear.com/10.x/open-peeps/svg?seed=Gizmo",
   },
   {
     id: "bot6",
     name: "Circuit",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Circuit",
+    url: "https://api.dicebear.com/10.x/open-peeps/svg?seed=Circuit",
   },
 ];
 

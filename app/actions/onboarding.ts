@@ -11,10 +11,7 @@ import { inngest } from "@/lib/inngest/client";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 import { invalidateAgentCache } from "@/lib/ai/agent-cache";
 
-/**
- * Save onboarding progress.
- * Resolves workspace from session + DB — never from cookies.
- */
+
 export async function saveOnboardingProgressAction(data: {
   agentName?: string;
   agentRole?: string;
@@ -32,7 +29,6 @@ export async function saveOnboardingProgressAction(data: {
 
   const { workspace, workspaceId } = ctx;
 
-  // Update Agent 1:1 Record
   await Agent.findOneAndUpdate(
     { workspaceId: workspace._id },
     {
@@ -45,10 +41,8 @@ export async function saveOnboardingProgressAction(data: {
     { upsert: true, runValidators: true, setDefaultsOnInsert: true }
   );
 
-  // Clear cached agent config so chat uses fresh settings
   invalidateAgentCache(workspace._id.toString());
 
-  // Update WidgetConfig 1:1 Record
   await WidgetConfig.findOneAndUpdate(
     { workspaceId: workspace._id },
     {
@@ -68,12 +62,7 @@ export async function saveOnboardingProgressAction(data: {
   return { success: true };
 }
 
-/**
- * Finish onboarding.
- * 1. Save all onboarding data via saveOnboardingProgressAction
- * 2. Mark onboarding as COMPLETED in the database (User.onboardingCompleted)
- * 3. Redirect to dashboard
- */
+
 export async function finishOnboardingAction(data: {
   agentName: string;
   agentRole: string;
@@ -88,7 +77,6 @@ export async function finishOnboardingAction(data: {
 }) {
   await saveOnboardingProgressAction(data);
 
-  // Mark onboarding complete in the DATABASE — this is the source of truth
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
 

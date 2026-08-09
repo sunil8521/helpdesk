@@ -7,9 +7,7 @@ import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 import { updateTag } from "next/cache";
 import { invalidateAgentCache } from "@/lib/ai/agent-cache";
 
-/**
- * Update workspace name profile settings.
- */
+
 export async function updateWorkspaceSettingsAction(data: { name: string }) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
@@ -25,15 +23,12 @@ export async function updateWorkspaceSettingsAction(data: { name: string }) {
     name: data.name.trim(),
   });
 
-  // NEXT 16 API: Forces an immediate, synchronous update
   updateTag(`settings-${ctx.workspace._id.toString()}`);
 
   return { success: true };
 }
 
-/**
- * Update AI engine agent parameters in MongoDB.
- */
+
 export async function updateAgentSettingsAction(data: {
   name?: string;
   role?: string;
@@ -81,10 +76,8 @@ export async function updateAgentSettingsAction(data: {
     { upsert: true, runValidators: true, setDefaultsOnInsert: true }
   );
 
-  // Clear the in-memory agent cache so next chat message fetches fresh config
   invalidateAgentCache(ctx.workspace._id.toString());
 
-  // NEXT 16 API: Forces an immediate, synchronous update
   updateTag(`settings-${ctx.workspace._id.toString()}`);
 
   return { success: true };

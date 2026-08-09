@@ -35,7 +35,7 @@ export async function inviteTeamMemberAction(email: string, role: "owner" | "adm
 
     // 4. Create or update invite (if an invite already exists for this email, overwrite the token/expiration)
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 day expiration
+    expiresAt.setDate(expiresAt.getDate() + 7); 
 
     const invite = await Invite.findOneAndUpdate(
       { workspaceId: ctx.workspace._id, email: normalizedEmail },
@@ -46,7 +46,7 @@ export async function inviteTeamMemberAction(email: string, role: "owner" | "adm
         invitedByUserId: ctx.userId,
         expiresAt,
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     // 5. Send email

@@ -4,7 +4,7 @@ import { Workspace, IWorkspace } from "@/lib/db/models/Workspace";
 import { Agent, IAgent } from "@/lib/db/models/Agent";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 
-// 1. Uncached entry point (reads cookies)
+// Fetch workspace and AI agent settings for the logged-in user
 export async function getWorkspaceAndAgentSettings() {
   const ctx = await resolveUserWorkspace();
   if (!ctx) throw new Error("Unauthorized");
@@ -12,7 +12,7 @@ export async function getWorkspaceAndAgentSettings() {
   return { ...data, role: ctx.role };
 }
 
-// 2. Cached data layer (takes string primitive, no request objects)
+// Cached query to fetch workspace and agent details from MongoDB
 async function fetchWorkspaceAndAgentCached(workspaceId: string) {
   "use cache";
   cacheLife("minutes");

@@ -1,7 +1,4 @@
-import { Conversation } from "@/lib/db/models/Conversation";
-import { Message } from "@/lib/db/models/Message";
-import { User } from "@/lib/db/models/User";
-import { connectToDatabase } from "@/lib/db/connect";
+
 const PORT = process.env.PORT;
 
 export async function emitVisitorProfileUpdated(

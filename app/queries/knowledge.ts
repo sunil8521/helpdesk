@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/db/connect";
 import { KnowledgeSource } from "@/lib/db/models/KnowledgeSource";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 
-// 1. Uncached entry point (safely reads cookies)
+// Fetch knowledge sources for current logged in workspace
 export async function getKnowledgeSources() {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
@@ -11,7 +11,7 @@ export async function getKnowledgeSources() {
   return fetchKnowledgeSourcesCached(ctx.workspace._id.toString());
 }
 
-// 2. Cached data layer (takes primitive workspace ID)
+// Cached query for knowledge documents
 async function fetchKnowledgeSourcesCached(workspaceId: string) {
   "use cache";
   cacheLife("minutes");

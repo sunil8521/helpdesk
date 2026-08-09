@@ -114,7 +114,7 @@ export function KnowledgeQuickAdd({ workspaceId, isAgent }: KnowledgeQuickAddPro
           <Sparkles className="h-4.5 w-4.5 text-brand" />
           <span>Quick Add Source</span>
         </div>
-        <div className="flex items-center bg-muted p-1 rounded-xl text-[12.5px] font-semibold w-fit">
+        <div className="flex items-center overflow-x-auto whitespace-nowrap bg-muted p-1 rounded-xl text-[11.5px] sm:text-[12.5px] font-semibold w-full sm:w-fit gap-1 no-scrollbar">
           <button
             onClick={() => setActiveAddTab("url")}
             className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeAddTab === "url" ? "bg-background shadow-xs text-brand" : "text-foreground/60 hover:text-foreground"

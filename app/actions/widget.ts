@@ -13,6 +13,10 @@ export async function updateWidgetConfigAction(data: {
   buttonColor?: string;
   position?: "left" | "right";
   proactiveMessage?: boolean;
+  leadCapture?: {
+    enabled: boolean;
+    requiredFields: string[];
+  };
 }) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
@@ -21,7 +25,7 @@ export async function updateWidgetConfigAction(data: {
   await connectToDatabase();
 
   const widgetConfig = await WidgetConfig.findOne({ workspaceId: ctx.workspace._id });
-  
+
   if (widgetConfig) {
     if (data.title !== undefined) widgetConfig.title = data.title;
     if (data.greeting !== undefined) widgetConfig.greeting = data.greeting;
@@ -29,6 +33,7 @@ export async function updateWidgetConfigAction(data: {
     if (data.buttonColor !== undefined) widgetConfig.buttonColor = data.buttonColor;
     if (data.position !== undefined) widgetConfig.position = data.position;
     if (data.proactiveMessage !== undefined) widgetConfig.proactiveMessage = data.proactiveMessage;
+    if (data.leadCapture !== undefined) widgetConfig.leadCapture = data.leadCapture;
     await widgetConfig.save();
   } else {
     // This shouldn't normally happen if onboarding created it, but just in case
@@ -40,6 +45,7 @@ export async function updateWidgetConfigAction(data: {
       buttonColor: data.buttonColor || "#4f46e5",
       position: data.position || "right",
       proactiveMessage: data.proactiveMessage ?? true,
+      leadCapture: data.leadCapture || { enabled: false, requiredFields: [] },
     });
   }
 

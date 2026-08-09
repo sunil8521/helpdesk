@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/db/connect";
 import { User } from "@/lib/db/models/User";
 
+// NextAuth options for email/password authentication
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({

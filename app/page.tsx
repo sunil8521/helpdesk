@@ -30,13 +30,11 @@ import {
 
 const NAV_ITEMS = ["Product", "Workflow", "Knowledge", "Handoff", "Pricing"];
 
-/* ──────────────────────────────────────────── */
-/*  Helpdesk — Premium SaaS Landing Page       */
-/* ──────────────────────────────────────────── */
+
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background selection:bg-brand/20">
+    <div className="min-h-screen bg-background selection:bg-brand/20 overflow-x-hidden">
 
       {/* ═══════════ Navbar ═══════════ */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/40">
@@ -93,7 +91,7 @@ export default function LandingPage() {
             </div>
 
             {/* Headline — mixed typography */}
-            <h1 className="mt-8 text-[44px] sm:text-[56px] md:text-[64px] lg:text-[72px] leading-[1.06] font-bold tracking-[-0.03em]">
+            <h1 className="mt-6 sm:mt-8 text-[28px] sm:text-[48px] md:text-[64px] lg:text-[72px] leading-[1.1] sm:leading-[1.06] font-bold tracking-[-0.03em]">
               AI support for{" "}
               <span className="font-display italic text-brand">WordPress</span>
               , Wix, &amp;{" "}
@@ -106,15 +104,15 @@ export default function LandingPage() {
             </p>
 
             {/* CTA buttons */}
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Button asChild className="bg-brand text-brand-foreground hover:bg-brand/85 px-8 h-[52px] text-[16px] font-semibold rounded-full shadow-lg shadow-brand/20 hover:shadow-xl hover:shadow-brand/30 hover:-translate-y-0.5 transition-all duration-300">
-                <Link href="/signup">
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+              <Button asChild className="w-full sm:w-auto bg-brand text-brand-foreground hover:bg-brand/85 px-8 h-12 sm:h-[52px] text-[15px] sm:text-[16px] font-semibold rounded-full shadow-lg shadow-brand/20 hover:shadow-xl hover:shadow-brand/30 hover:-translate-y-0.5 transition-all duration-300">
+                <Link href="/signup" className="flex items-center justify-center">
                   Start free
                   <ArrowRight className="ml-2 h-[18px] w-[18px]" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="px-8 h-[52px] text-[16px] font-semibold rounded-full border-2 border-border hover:border-foreground/20 hover:bg-muted/40 transition-all duration-300">
-                <Link href="/dashboard">
+              <Button asChild variant="outline" className="w-full sm:w-auto px-8 h-12 sm:h-[52px] text-[15px] sm:text-[16px] font-semibold rounded-full border-2 border-border/80 hover:border-foreground/20 hover:bg-muted/40 transition-all duration-300">
+                <Link href="/dashboard" className="flex items-center justify-center">
                   <Play className="mr-2 h-4 w-4 fill-current" />
                   View demo
                 </Link>
@@ -140,9 +138,9 @@ export default function LandingPage() {
 
       {/* ═══════════ Platform strip ═══════════ */}
       <div className="border-y border-border/40">
-        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 py-7 flex flex-wrap items-center justify-between gap-6">
-          <div className="text-[13px] text-foreground/35 font-semibold uppercase tracking-[0.2em]">Runs natively on</div>
-          <div className="flex items-center gap-10 md:gap-14 text-[16px] font-semibold tracking-tight">
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 py-5 sm:py-7 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+          <div className="text-[12px] sm:text-[13px] text-foreground/35 font-semibold uppercase tracking-[0.2em]">Runs natively on</div>
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-10 md:gap-14 text-[14px] sm:text-[16px] font-semibold tracking-tight">
             <span className="text-foreground/70">WordPress</span>
             <span className="text-foreground/70 font-display italic">Wix</span>
             <span className="text-foreground/70">Webflow</span>
@@ -167,7 +165,7 @@ export default function LandingPage() {
               { n: "03", t: "AI answers", d: "Gemini answers only from your knowledge base with source citations." },
               { n: "04", t: "Human takes over", d: "Agents accept handoff in the shared inbox and continue the conversation seamlessly." },
             ].map((s) => (
-              <div key={s.n} className="group relative rounded-2xl border border-border/60 bg-card p-8 hover:border-brand/25 hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.06)] transition-all duration-500">
+              <div key={s.n} className="group relative rounded-2xl border border-border/60 bg-card p-5 sm:p-8 hover:border-brand/25 hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.06)] transition-all duration-500">
                 <span className="text-[13px] font-mono font-semibold text-brand/40 tracking-wider">{s.n}</span>
                 <h3 className="mt-5 text-[20px] font-bold tracking-[-0.02em] leading-snug">{s.t}</h3>
                 <p className="mt-3 text-[15px] leading-[1.7] text-foreground/50">{s.d}</p>
@@ -218,7 +216,7 @@ export default function LandingPage() {
             title={<>A dashboard your agents will <em className="font-display not-italic italic text-brand">actually use</em></>}
             subtitle="Every conversation — AI or human — routed to the right place with citations, context, and history."
           />
-          <div className="mt-16 rounded-[20px] border border-border/40 bg-[oklch(0.985_0.003_260)] p-5 md:p-10 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.08)]">
+          <div className="mt-10 sm:mt-16 rounded-[20px] border border-border/40 bg-[oklch(0.985_0.003_260)] p-3 sm:p-5 md:p-10 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.08)] overflow-x-auto">
             <DashboardPreview />
           </div>
         </div>
@@ -232,44 +230,44 @@ export default function LandingPage() {
             title={<>Your docs. Your <em className="font-display not-italic italic text-brand">answers.</em></>}
             subtitle="Upload files or point us at your site. We chunk, embed, and keep the index fresh."
           />
-          <div className="mt-16 grid md:grid-cols-2 gap-6">
+          <div className="mt-10 sm:mt-16 grid md:grid-cols-2 gap-6">
             {/* Documents card */}
-            <div className="rounded-2xl border border-border/60 bg-card p-8">
-              <h3 className="text-[20px] font-bold tracking-[-0.02em]">Documents</h3>
-              <div className="mt-6 space-y-3">
+            <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-8">
+              <h3 className="text-[18px] sm:text-[20px] font-bold tracking-[-0.02em]">Documents</h3>
+              <div className="mt-4 sm:mt-6 space-y-2.5 sm:space-y-3">
                 {[
                   { n: "Refund Policy.pdf", s: "Completed", i: CheckCircle2, c: "text-emerald" },
                   { n: "Onboarding Guide.md", s: "Embedding", i: Loader2, c: "text-brand animate-spin" },
                   { n: "Product FAQ.pdf", s: "Chunked", i: FileText, c: "text-foreground/40" },
                 ].map((d) => (
-                  <div key={d.n} className="flex items-center justify-between rounded-xl border border-border/50 bg-background px-5 py-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FileText className="h-5 w-5 text-foreground/30 shrink-0" />
-                      <div className="text-[15px] font-medium truncate">{d.n}</div>
+                  <div key={d.n} className="flex items-center justify-between rounded-xl border border-border/50 bg-background px-3.5 py-3 sm:px-5 sm:py-4 gap-2">
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                      <FileText className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-foreground/30 shrink-0" />
+                      <div className="text-[13.5px] sm:text-[15px] font-medium truncate">{d.n}</div>
                     </div>
-                    <div className="flex items-center gap-2 text-[13px] text-foreground/45 font-medium">
-                      <d.i className={`h-4 w-4 ${d.c}`} /> {d.s}
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-[12px] sm:text-[13px] text-foreground/45 font-medium shrink-0">
+                      <d.i className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${d.c}`} /> {d.s}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
             {/* Crawler card */}
-            <div className="rounded-2xl border border-border/60 bg-card p-8">
-              <h3 className="text-[20px] font-bold tracking-[-0.02em]">Crawler — acme.co</h3>
-              <p className="mt-2 text-[14px] text-foreground/40 font-medium">Same-origin only · Respects robots.txt</p>
-              <div className="mt-7 h-2.5 rounded-full bg-muted overflow-hidden">
+            <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-8">
+              <h3 className="text-[18px] sm:text-[20px] font-bold tracking-[-0.02em]">Crawler — acme.co</h3>
+              <p className="mt-1.5 sm:mt-2 text-[13px] sm:text-[14px] text-foreground/40 font-medium">Same-origin only · Respects robots.txt</p>
+              <div className="mt-5 sm:mt-7 h-2.5 rounded-full bg-muted overflow-hidden">
                 <div className="h-full bg-brand rounded-full transition-all duration-1000" style={{ width: "68%" }} />
               </div>
-              <div className="mt-7 grid grid-cols-3 gap-4 text-center">
+              <div className="mt-5 sm:mt-7 grid grid-cols-3 gap-2.5 sm:gap-4 text-center">
                 {[
                   { v: "124", l: "Discovered" },
                   { v: "84", l: "Crawled" },
                   { v: "612", l: "Chunks" },
                 ].map((s) => (
-                  <div key={s.l} className="rounded-xl bg-muted/40 py-5">
-                    <div className="text-[28px] font-bold tracking-tight">{s.v}</div>
-                    <div className="text-[11px] text-foreground/35 uppercase tracking-[0.15em] font-semibold mt-1.5">{s.l}</div>
+                  <div key={s.l} className="rounded-xl bg-muted/40 py-3 sm:py-5 px-1">
+                    <div className="text-[20px] sm:text-[28px] font-bold tracking-tight">{s.v}</div>
+                    <div className="text-[9.5px] sm:text-[11px] text-foreground/35 uppercase tracking-[0.1em] sm:tracking-[0.15em] font-semibold mt-1">{s.l}</div>
                   </div>
                 ))}
               </div>
@@ -385,7 +383,7 @@ export default function LandingPage() {
               { q: "The AI handles the repetitive questions perfectly. Our team now focuses only on complex cases.", n: "Marcus W.", r: "CTO, NovaPay", s: 5 },
               { q: "Setup took 10 minutes. Uploaded our docs, pasted the script tag, and the widget was live.", n: "Priya N.", r: "Founder, CloudBase", s: 5 },
             ].map((t) => (
-              <div key={t.n} className="rounded-2xl border border-border/60 bg-card p-8 hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.06)] transition-all duration-500">
+              <div key={t.n} className="rounded-2xl border border-border/60 bg-card p-5 sm:p-8 hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.06)] transition-all duration-500">
                 <div className="flex gap-1">
                   {Array.from({ length: t.s }).map((_, i) => (
                     <Star key={i} className="h-[18px] w-[18px] text-amber fill-amber" />
@@ -410,7 +408,7 @@ export default function LandingPage() {
       {/* ═══════════ Final CTA ═══════════ */}
       <section id="pricing" className="py-28 md:py-36">
         <div className="mx-auto max-w-[880px] px-6 lg:px-10 text-center">
-          <h2 className="text-[40px] sm:text-[48px] md:text-[60px] font-bold tracking-[-0.03em] leading-[1.1]">
+          <h2 className="text-[28px] sm:text-[48px] md:text-[60px] font-bold tracking-[-0.03em] leading-[1.1]">
             Launch your AI{" "}
             <em className="font-display not-italic italic text-brand">support desk.</em>
           </h2>
@@ -493,7 +491,7 @@ function SectionHeader({
       <div className="mt-3 flex justify-center">
         <div className="h-[3px] w-10 rounded-full bg-brand/40" />
       </div>
-      <h2 className="mt-6 text-[36px] sm:text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.12]">
+      <h2 className="mt-4 sm:mt-6 text-[26px] sm:text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.12]">
         {title}
       </h2>
       {subtitle && (

@@ -6,8 +6,9 @@ import { getAgentSocketToken } from "@/app/actions/chat";
 import { v4 as uuidv4 } from "uuid";
 import {
   Sparkles, User, Send, UserPlus, Bot, CheckCircle2, MoreHorizontal,
-  Circle, Clock, Info, Headphones,
+  Circle, Clock, Info, Headphones, ArrowLeft, X,
 } from "lucide-react";
+import Link from "next/link";
 import { StatusBadge } from "@/components/hendesk/status-badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -104,7 +105,7 @@ function TimelineItem({ icon: Icon, label, time }: { icon: any; label: string; t
 // ---------------------------------------------------------------------------
 export function ChatWindow({
   initialMessages,
-  conversation,
+  conversation: initialConvo,
   agentUserId,
   workspaceId,
   agentName,
@@ -117,16 +118,17 @@ export function ChatWindow({
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<any[]>(initialMessages);
+  const [currentConvo, setCurrentConvo] = useState<any>(initialConvo);
   const [reply, setReply] = useState("");
   const [agentToken, setAgentToken] = useState<string | null>(null);
-  const [currentConvo, setCurrentConvo] = useState(conversation);
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Re-sync if Server Component re-renders with new data
   useEffect(() => {
     setMessages(initialMessages);
-    setCurrentConvo(conversation);
-  }, [initialMessages, conversation]);
+    setCurrentConvo(initialConvo);
+  }, [initialMessages, initialConvo]);
 
   useEffect(() => {
     async function fetchToken() {
@@ -249,34 +251,47 @@ export function ChatWindow({
   return (
     <>
       {/* ── Center Column: Chat Thread ── */}
-      <div className="flex flex-col h-full min-w-0 bg-background overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-background overflow-hidden">
         {/* Pinned Thread Header */}
-        <div className="h-16 border-b border-border/40 px-5 flex items-center justify-between gap-3 bg-card shrink-0 select-none">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[15px] font-bold tracking-tight text-foreground truncate">{visitorName}</h2>
+        <div className="h-16 border-b border-border/40 px-3.5 sm:px-5 flex items-center justify-between gap-2.5 bg-card shrink-0 select-none">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Link
+              href="/dashboard/inbox"
+              className="md:hidden p-1.5 rounded-xl text-foreground/70 hover:bg-muted transition-colors shrink-0"
+              title="Back to all conversations"
+            >
+              <ArrowLeft className="h-5 w-5 text-foreground" />
+            </Link>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[14.5px] sm:text-[15px] font-bold tracking-tight text-foreground truncate">{visitorName}</h2>
+              </div>
+              <p className="text-[11px] sm:text-[11.5px] text-foreground/40 font-medium truncate mt-0.5">{visitorEmail}</p>
             </div>
-            <p className="text-[11.5px] text-foreground/40 font-medium truncate mt-0.5">{visitorEmail} · Page: {visitorPage}</p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {currentConvo.status === "waiting" && (
-              <Button size="sm" className="bg-emerald text-white hover:bg-emerald/90 rounded-full h-9 px-4 text-[13px] font-semibold shadow-xs" onClick={() => executeAction("conversation:claim")}>
-                <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Accept Handoff
+              <Button size="sm" className="bg-emerald text-white hover:bg-emerald/90 rounded-full h-8.5 sm:h-9 px-3 sm:px-4 text-[12px] sm:text-[13px] font-semibold shadow-xs" onClick={() => executeAction("conversation:claim")}>
+                <UserPlus className="h-3.5 w-3.5 mr-1" /> Accept Handoff
               </Button>
             )}
             {currentConvo.status === "human" && (
               <>
-                <Button size="sm" variant="outline" className="rounded-full h-9 px-3.5 text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:return-to-ai")}>
-                  <Bot className="h-3.5 w-3.5 mr-1 text-brand" /> Return to AI
+                <Button size="sm" variant="outline" className="rounded-full h-8.5 sm:h-9 px-2.5 sm:px-3.5 text-[11.5px] sm:text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:return-to-ai")}>
+                  <Bot className="h-3.5 w-3.5 mr-1 text-brand" /> <span className="hidden sm:inline">Return to </span>AI
                 </Button>
-                <Button size="sm" variant="outline" className="rounded-full h-9 px-3.5 text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:resolve")}>
+                <Button size="sm" variant="outline" className="rounded-full h-8.5 sm:h-9 px-2.5 sm:px-3.5 text-[11.5px] sm:text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:resolve")}>
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-emerald" /> Resolve
                 </Button>
               </>
             )}
-            <button className="h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/[0.05] text-foreground/60 transition-colors">
-              <MoreHorizontal className="h-4 w-4" />
+            <button
+              onClick={() => setShowMobileDetails(!showMobileDetails)}
+              className="lg:hidden h-8.5 w-8.5 grid place-items-center rounded-full hover:bg-foreground/[0.05] text-foreground/70 transition-colors"
+              title="Visitor Details"
+            >
+              <Info className="h-4 w-4 text-brand" />
             </button>
           </div>
         </div>
@@ -326,7 +341,7 @@ export function ChatWindow({
       </div>
 
       {/* ── Right Column: Visitor Profile & Timeline ── */}
-      <aside className="hidden lg:flex flex-col h-full border-l border-border/40 bg-card select-none overflow-hidden">
+      <aside className="hidden lg:flex flex-col h-full border-l border-border/40 bg-card select-none overflow-hidden w-[340px] shrink-0">
         {/* Visitor Card (Pinned) */}
         <div className="p-5 space-y-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -392,6 +407,87 @@ export function ChatWindow({
           </div>
         </div>
       </aside>
+
+      {/* ── Mobile Visitor Details Slide-over Modal ── */}
+      {showMobileDetails && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex justify-end">
+          <div className="w-full max-w-sm bg-card border-l border-border/40 h-full flex flex-col p-5 shadow-2xl animate-in slide-in-from-right duration-200 overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-brand" />
+                <h3 className="font-bold text-[15px] text-foreground">Visitor Details</h3>
+              </div>
+              <button
+                onClick={() => setShowMobileDetails(false)}
+                className="p-1.5 rounded-xl hover:bg-muted text-foreground/70 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-full bg-brand/10 text-brand grid place-items-center text-[15px] font-bold">
+                  {getInitials(visitorName)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-[16px] text-foreground leading-tight">{visitorName}</h3>
+                  <p className="text-[12px] text-foreground/45 mt-0.5">{visitorEmail}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-[oklch(0.985_0.003_260)] border border-border/40 text-[12px]">
+                <div>
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block">Visitor ID</span>
+                  <span className="font-mono text-foreground/80 font-medium truncate block">{currentConvo._id.slice(-8)}</span>
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block">Device</span>
+                  <span className="text-foreground/80 font-medium block">{visitorDevice}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block mb-1">Active Page</span>
+                  <span className="text-brand font-semibold break-all block leading-tight">
+                    {(() => {
+                      if (!visitorPage) return "Unknown";
+                      try {
+                        const url = new URL(visitorPage);
+                        return url.pathname + url.search + url.hash || "/";
+                      } catch (e) {
+                        return visitorPage;
+                      }
+                    })()}
+                  </span>
+                </div>
+                <div className="col-span-2 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block mb-1">Mode</span>
+                    <StatusBadge status={currentConvo.status} />
+                  </div>
+                </div>
+                {currentConvo.handoffReason && (
+                  <div className="col-span-2 mt-1">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-foreground/35 block mb-1.5">Handoff Reason</span>
+                    <div className="bg-card/60 border border-border/50 rounded-xl p-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+                      <span className="text-foreground/75 font-medium leading-relaxed block text-[12.5px] italic">"{currentConvo.handoffReason}"</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3 pt-3 border-t border-border/40">
+                <h4 className="text-[12px] font-bold uppercase tracking-wider text-foreground/40">Activity Timeline</h4>
+                <ol className="space-y-3 text-[12.5px]">
+                  <TimelineItem icon={Circle} label="Visitor started conversation" time={currentConvo.createdAt ? new Date(currentConvo.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Unknown"} />
+                  {systemTimeline.map((item, i) => (
+                    <TimelineItem key={i} icon={item.icon} label={item.label} time={item.time} />
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

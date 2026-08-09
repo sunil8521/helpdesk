@@ -75,7 +75,7 @@ export function SignupForm() {
   };
 
   return (
-    <div className="bg-card py-8 px-6 sm:px-10 rounded-3xl border border-border/50 shadow-xl space-y-6">
+    <div className="bg-card py-6 px-4 sm:py-8 sm:px-10 rounded-3xl border border-border/50 shadow-xl space-y-6">
       {serverError && (
         <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-[13px] text-red-700 flex items-center gap-2.5">
           <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />

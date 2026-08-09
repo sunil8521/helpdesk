@@ -17,14 +17,14 @@ export function MobileNav({ items }: MobileNavProps) {
     <div className="lg:hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="p-2 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/[0.05] transition-colors"
+        className="p-2.5 rounded-xl border border-border/50 bg-card/80 text-foreground/80 hover:text-foreground hover:bg-muted/50 shadow-2xs transition-all"
         aria-label="Toggle Menu"
       >
-        {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {open && (
-        <div className="fixed inset-x-0 top-[68px] sm:top-[72px] bottom-0 bg-background/95 backdrop-blur-xl border-t border-border/40 z-50 p-6 flex flex-col justify-between animate-in fade-in-0 slide-in-from-top-2 duration-200">
+        <div className="fixed inset-x-0 top-[68px] sm:top-[72px] bottom-0 bg-background border-t border-border/50 z-[100] p-6 flex flex-col justify-between animate-in fade-in-0 slide-in-from-top-2 duration-200 shadow-2xl">
           <div className="space-y-4">
             <nav className="flex flex-col gap-1">
               {items.map((item) => (

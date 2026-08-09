@@ -4,8 +4,10 @@ import { Workspace } from "@/lib/db/models/Workspace";
 import { Agent } from "@/lib/db/models/Agent";
 import { cacheTag } from "next/cache";
 
+// Fetch widget styling & agent header configuration for dashboard preview
 export async function getWidgetConfig(workspaceObjectId: string, workspaceStringId: string) {
   "use cache";
+  cacheTag(`widgetConfig-${workspaceObjectId}`);
 
   try {
     await connectToDatabase();
@@ -15,12 +17,9 @@ export async function getWidgetConfig(workspaceObjectId: string, workspaceString
       Agent.findOne({ workspaceId: workspaceObjectId }).select("name role").lean(),
     ]);
 
-    // Next 16 dynamic tag caching
-    cacheTag(`widgetConfig-${workspaceObjectId}`);
-
     return {
       success: true,
-      config: widgetConfig,
+      config: widgetConfig ? JSON.parse(JSON.stringify(widgetConfig)) : null,
       agentInfo: agent ? { name: agent.name, role: agent.role } : null,
       workspaceId: workspaceStringId,
     };
@@ -32,6 +31,7 @@ export async function getWidgetConfig(workspaceObjectId: string, workspaceString
   }
 }
 
+// Fetch public widget config for embedded chat widget script on customer websites
 export async function getPublicWidgetConfigBySlug(workspaceStringId: string) {
   try {
     await connectToDatabase();

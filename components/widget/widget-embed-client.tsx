@@ -12,6 +12,7 @@ import {
   startNewChat,
 } from "@/app/actions/chat";
 import { io, Socket } from "socket.io-client";
+import { LeadCaptureForm } from "./lead-capture-form";
 import type {
   ServerToClientEvents,
   ClientToServerEvents,
@@ -32,6 +33,10 @@ interface WidgetEmbedClientProps {
     buttonColor?: string;
     position?: "right" | "left";
     proactiveMessage?: boolean;
+    leadCapture?: {
+      enabled: boolean;
+      requiredFields: string[];
+    };
   } | null;
   agent: {
     name?: string;
@@ -64,6 +69,8 @@ export function WidgetEmbedClient({
   previewMode = false,
 }: WidgetEmbedClientProps) {
   const [isOpen, setIsOpen] = useState(previewMode);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMsg, setPopupMsg] = useState(config?.greeting || "Hi 👋 How can we help today?");
   const [activeTab, setActiveTab] = useState<"chat" | "faq">("chat");
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [inputMsg, setInputMsg] = useState("");
@@ -75,6 +82,7 @@ export function WidgetEmbedClient({
   >("ai");
   const [socketConnected, setSocketConnected] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [hasCapturedLead, setHasCapturedLead] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<TypedSocket | null>(null);
@@ -84,9 +92,57 @@ export function WidgetEmbedClient({
     routeStatusRef.current = routeStatus;
   }, [routeStatus]);
 
-  // ---------------------------------------------------------------------------
-  // Socket helpers — only used for human/waiting mode
-  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (isOpen) {
+      setShowPopup(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    setPopupMsg(config?.greeting || "Hi 👋 How can we help today?");
+  }, [config?.greeting]);
+
+  // Proactive popup interval logic
+  useEffect(() => {
+    if (previewMode) {
+      setShowPopup(true);
+      return;
+    }
+
+    if (config?.proactiveMessage === false) {
+      return;
+    }
+
+    const messages = [
+      config?.greeting || "Hi 👋 How can we help today?",
+    ];
+
+    let isMounted = true;
+
+    const initialTimer = setTimeout(() => {
+      if (isMounted && !isOpen && routeStatusRef.current === "ai") {
+        setPopupMsg(messages[0]);
+        setShowPopup(true);
+        setTimeout(() => isMounted && setShowPopup(false), 7000);
+      }
+    }, 3000);
+
+    const intervalTimer = setInterval(() => {
+      if (isMounted && !isOpen && routeStatusRef.current === "ai") {
+        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+        setPopupMsg(randomMsg);
+        setShowPopup(true);
+        setTimeout(() => isMounted && setShowPopup(false), 7000);
+      }
+    }, 25000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(initialTimer);
+      clearInterval(intervalTimer);
+    };
+  }, [isOpen, previewMode, config?.greeting, config?.proactiveMessage]);
+
   const disconnectSocket = useCallback(() => {
     socketRef.current?.disconnect();
     socketRef.current = null;
@@ -95,7 +151,6 @@ export function WidgetEmbedClient({
 
   const connectSocket = useCallback(
     async (sid: string) => {
-      // Already connected
       if (socketRef.current?.connected) return;
 
       try {
@@ -130,11 +185,9 @@ export function WidgetEmbedClient({
           setSocketConnected(false);
         });
 
-        // New message from agent/system
         socket.on("message:created", (msg: SocketMessage) => {
           setMessages((prev) => {
             if (prev.some((m) => m._id === msg._id)) return prev;
-            // Replace optimistic message
             if (
               msg.clientMessageId &&
               prev.some((m) => m.clientMessageId === msg.clientMessageId)
@@ -156,7 +209,6 @@ export function WidgetEmbedClient({
                 )
                 .sort((a, b) => a.sequence - b.sequence);
             }
-            // Skip own visitor messages (already shown optimistically)
             if (msg.senderType === "visitor") return prev;
             return [
               ...prev,
@@ -171,12 +223,10 @@ export function WidgetEmbedClient({
           setIsLoading(false);
         });
 
-        // Route changed (agent claimed, resolved, returned to AI)
         socket.on("conversation:route-changed", (change) => {
           routeStatusRef.current = change.status;
           setRouteStatus(change.status);
 
-          // Show system message
           setMessages((prev) => {
             if (prev.some((m) => m._id === change.systemMessage._id))
               return prev;
@@ -192,7 +242,6 @@ export function WidgetEmbedClient({
           });
           setIsLoading(false);
 
-          // If returned to AI, disconnect socket (save resources)
           if (change.status === "ai") {
             disconnectSocket();
           }
@@ -206,12 +255,10 @@ export function WidgetEmbedClient({
     [workspaceId, disconnectSocket]
   );
 
-  // ---------------------------------------------------------------------------
-  // Initialize: load session + history
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     let cancelled = false;
     const storageKey = `chat_session_id:${workspaceId}`;
+    const leadKey = `helpdesk_lead_${workspaceId}`;
     let storedSession =
       localStorage.getItem(storageKey) ||
       localStorage.getItem("chat_session_id");
@@ -220,6 +267,7 @@ export function WidgetEmbedClient({
       storedSession = uuidv4();
     }
     localStorage.setItem(storageKey, storedSession);
+    setHasCapturedLead(localStorage.getItem(leadKey) === "1");
 
     const init = async () => {
       if (cancelled) return;
@@ -263,7 +311,6 @@ export function WidgetEmbedClient({
         ]);
       }
 
-      // If conversation is in waiting/human mode, connect socket
       if (result.status === "waiting" || result.status === "human") {
         await connectSocket(storedSession as string);
       }
@@ -277,27 +324,22 @@ export function WidgetEmbedClient({
     };
   }, [workspaceId, config?.greeting, connectSocket, disconnectSocket]);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen]);
 
-  // Notify parent window when open state changes (for iframe resize)
   useEffect(() => {
     if (typeof window !== "undefined" && window.parent) {
       window.parent.postMessage(
         {
           type: "WIDGET_RESIZE",
-          payload: { isExpanded: isOpen, position: config?.position },
+          payload: { isExpanded: isOpen, showPopup: showPopup, position: config?.position },
         },
         "*"
       );
     }
-  }, [isOpen, config?.position]);
+  }, [isOpen, showPopup, config?.position]);
 
-  // ---------------------------------------------------------------------------
-  // Send message
-  // ---------------------------------------------------------------------------
   const handleSendMessage = useCallback(
     async (e?: React.FormEvent) => {
       if (e) e.preventDefault();
@@ -307,7 +349,6 @@ export function WidgetEmbedClient({
       const clientMessageId = uuidv4();
       setInputMsg("");
 
-      // Optimistic user message
       setMessages((prev) => [
         ...prev,
         {
@@ -320,7 +361,6 @@ export function WidgetEmbedClient({
         },
       ]);
 
-      // ------- AI MODE: server action, no socket -------
       if (routeStatusRef.current === "ai") {
         setIsLoading(true);
 
@@ -348,7 +388,6 @@ export function WidgetEmbedClient({
           return;
         }
 
-        // Replace optimistic message with confirmed
         if (result.visitorMessage) {
           setMessages((prev) =>
             prev.map((m) =>
@@ -365,10 +404,8 @@ export function WidgetEmbedClient({
           );
         }
 
-        // Set conversation ID
         if (result.conversationId) setConversationId(result.conversationId);
 
-        // Add AI response
         if (result.aiMessage) {
           setMessages((prev) => [
             ...prev,
@@ -381,7 +418,6 @@ export function WidgetEmbedClient({
           ]);
         }
 
-        // If escalated: show system messages, connect socket
         if (result.escalated) {
           if (result.systemMessages) {
             setMessages((prev) => [
@@ -399,8 +435,7 @@ export function WidgetEmbedClient({
           routeStatusRef.current = newStatus;
           setRouteStatus(newStatus);
 
-          // Connect socket for real-time
-          setIsLoading(true); // Show "connecting" dots
+          setIsLoading(true);
           await connectSocket(sessionId);
           setIsLoading(false);
         } else {
@@ -410,7 +445,6 @@ export function WidgetEmbedClient({
         return;
       }
 
-      // ------- HUMAN/WAITING MODE: send via socket -------
       const socket = socketRef.current;
       if (!socket?.connected) {
         setMessages((prev) => [
@@ -449,9 +483,6 @@ export function WidgetEmbedClient({
     [inputMsg, isLoading, sessionId, workspaceId, ssoName, ssoEmail, connectSocket]
   );
 
-  // ---------------------------------------------------------------------------
-  // Continue Chat (reopen resolved → AI mode)
-  // ---------------------------------------------------------------------------
   const handleContinueChat = useCallback(async () => {
     if (!conversationId) return;
     const result = await continueChat(conversationId);
@@ -462,21 +493,16 @@ export function WidgetEmbedClient({
     }
   }, [conversationId, disconnectSocket]);
 
-  // ---------------------------------------------------------------------------
-  // New Chat (delete everything, fresh start)
-  // ---------------------------------------------------------------------------
   const handleNewChat = useCallback(async () => {
     if (!sessionId) return;
     await startNewChat(sessionId, workspaceId);
 
-    // Generate new session
     const newSession = uuidv4();
     const storageKey = `chat_session_id:${workspaceId}`;
     localStorage.setItem(storageKey, newSession);
     setSessionId(newSession);
     setConversationId(null);
 
-    // Reset state
     routeStatusRef.current = "ai";
     setRouteStatus("ai");
     disconnectSocket();
@@ -492,9 +518,6 @@ export function WidgetEmbedClient({
     setIsLoading(false);
   }, [sessionId, workspaceId, config?.greeting, disconnectSocket]);
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
   if (!workspaceId) {
     return (
       <div className="w-full h-full flex items-end justify-end p-2 font-sans">
@@ -525,7 +548,6 @@ export function WidgetEmbedClient({
     <div className="w-full h-full flex flex-col justify-end select-none font-sans overflow-hidden bg-transparent">
       {isOpen ? (
         <div className="w-full h-full bg-card border border-border/50 rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
-          {/* Header */}
           <div
             className="px-4.5 py-3.5 flex items-center justify-between text-white"
             style={{ background: themeColor }}
@@ -578,10 +600,17 @@ export function WidgetEmbedClient({
             </button>
           </div>
 
-          {/* Main Body */}
-          {activeTab === "chat" ? (
+          {config?.leadCapture?.enabled && !hasCapturedLead ? (
+            <LeadCaptureForm
+              workspaceId={workspaceId}
+              visitorId={sessionId || "temp"}
+              requiredFields={config.leadCapture.requiredFields}
+              themeColor={themeColor}
+              buttonColor={buttonColor}
+              onCaptured={() => setHasCapturedLead(true)}
+            />
+          ) : activeTab === "chat" ? (
             <>
-              {/* Messages */}
               <div className="p-4 space-y-3 flex-1 overflow-y-auto scrollbar-none bg-background">
                 {messages.map((m) => {
                   if (m.sender === "system") {
@@ -723,11 +752,10 @@ export function WidgetEmbedClient({
                         className={`h-4 w-4 text-foreground/50 transition-transform duration-200 shrink-0 ${openFaqId === faq._id ? "rotate-180" : ""}`}
                       />
                     </button>
-                    
-                    <div 
-                      className={`px-3.5 pb-3.5 text-[12px] text-foreground/70 leading-relaxed transition-all duration-300 origin-top ${
-                        openFaqId === faq._id ? "block animate-in fade-in slide-in-from-top-2" : "hidden"
-                      }`}
+
+                    <div
+                      className={`px-3.5 pb-3.5 text-[12px] text-foreground/70 leading-relaxed transition-all duration-300 origin-top ${openFaqId === faq._id ? "block animate-in fade-in slide-in-from-top-2" : "hidden"
+                        }`}
                     >
                       {faq.answer}
                     </div>
@@ -743,8 +771,8 @@ export function WidgetEmbedClient({
               type="button"
               onClick={() => setActiveTab("chat")}
               className={`flex-1 flex flex-col items-center gap-0.5 ${activeTab === "chat"
-                  ? "font-bold text-foreground"
-                  : "hover:text-foreground"
+                ? "font-bold text-foreground"
+                : "hover:text-foreground"
                 }`}
             >
               <MessageSquare
@@ -757,8 +785,8 @@ export function WidgetEmbedClient({
               type="button"
               onClick={() => setActiveTab("faq")}
               className={`flex-1 flex flex-col items-center gap-0.5 ${activeTab === "faq"
-                  ? "font-bold text-foreground"
-                  : "hover:text-foreground"
+                ? "font-bold text-foreground"
+                : "hover:text-foreground"
                 }`}
             >
               <HelpCircle
@@ -774,28 +802,57 @@ export function WidgetEmbedClient({
           </div>
         </div>
       ) : (
-        /* Floating Launcher Bubble Button */
-        <div className="w-full h-full grid place-items-center bg-transparent">
+        /* Floating Launcher */
+        <div className={`w-full h-full relative flex flex-col ${config?.position === "left" ? "items-start" : "items-end"} justify-end bg-transparent p-1`}>
+          {showPopup && !isOpen && (
+            <div
+              className={`absolute bottom-[86px] ${config?.position === "left" ? "left-2 origin-bottom-left" : "right-2 origin-bottom-right"} max-w-[220px] bg-white dark:bg-slate-800 rounded-[20px] px-4 py-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-border/40 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-500 cursor-pointer hover:scale-[1.02] transition-transform`}
+              onClick={() => setIsOpen(true)}
+            >
+              {/* Tooltip Tail */}
+              <svg
+                className={`absolute -bottom-[8px] ${config?.position === "left" ? "left-[22px]" : "right-[22px]"} w-5 h-[9px] text-white dark:text-slate-800 filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.05)]`}
+                viewBox="0 0 20 9"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M0 0C4.305 0 7.822 2.65 9.405 6.6L10 8L10.595 6.6C12.178 2.65 15.695 0 20 0H0Z" />
+              </svg>
+
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShowPopup(false); }}
+                className="absolute top-2 right-2 text-foreground/30 hover:text-foreground/80 hover:bg-muted p-1 rounded-full cursor-pointer transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+
+              <p className="text-[13px] text-slate-700 dark:text-slate-200 font-semibold pr-4 leading-snug">
+                {popupMsg}
+              </p>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="h-14 w-14 grid place-items-center hover:scale-110 active:scale-95 transition-all cursor-pointer shrink-0 border-none outline-none bg-transparent"
+            className="h-[72px] w-[72px] grid place-items-center hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0 border-none outline-none bg-transparent"
           >
             {avatarUrl ? (
               <Image
                 src={avatarUrl}
                 alt={agentName}
-                width={56}
-                height={56}
+                width={72}
+                height={72}
                 className="h-full w-full object-contain filter drop-shadow-md"
                 unoptimized
               />
             ) : (
               <div
-                className="h-14 w-14 rounded-full grid place-items-center text-white shadow-lg"
+                className="h-[72px] w-[72px] rounded-full grid place-items-center text-white shadow-lg"
                 style={{ background: buttonColor }}
               >
-                <MessageSquare className="h-6 w-6" />
+                <MessageSquare className="h-7 w-7 text-white drop-shadow-md" />
               </div>
             )}
           </button>

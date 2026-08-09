@@ -36,6 +36,7 @@ export function DashboardShell({ children, inboxCount = 0 }: { children?: ReactN
   const nav = [
     { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/dashboard/inbox", label: "Inbox", icon: Inbox, badge: inboxCount > 0 ? String(inboxCount) : undefined },
+    { to: "/dashboard/leads", label: "Leads", icon: Users },
     { to: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen },
     { to: "/dashboard/widget", label: "Widget", icon: MessageSquareCode },
     { to: "/dashboard/team", label: "Team", icon: Users },
@@ -124,7 +125,6 @@ export function DashboardShell({ children, inboxCount = 0 }: { children?: ReactN
             >
               <Menu className="h-5.5 w-5.5" />
             </button>
-            <Link href="/" className="shrink-0"><HelpdeskLogo showText={false} /></Link>
           </div>
 
        

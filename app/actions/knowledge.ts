@@ -6,9 +6,7 @@ import { inngest } from "@/lib/inngest/client";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 import { updateTag } from "next/cache";
 
-/**
- * Helper to queue a knowledge source for processing
- */
+
 async function queueKnowledgeSource(sourceId: string, workspaceId: string, type: string) {
   try {
     if (type === "url") {
@@ -31,10 +29,7 @@ async function queueKnowledgeSource(sourceId: string, workspaceId: string, type:
   }
 }
 
-/**
- * Unified Knowledge Source Creator
- * Supports text, url, and file types.
- */
+
 export async function createKnowledgeSourceAction(data: {
   type: "text" | "file" | "url";
   title: string;
@@ -82,7 +77,6 @@ export async function createKnowledgeSourceAction(data: {
 
   const queueResult = await queueKnowledgeSource(source._id.toString(), ctx.workspace._id.toString(), data.type);
 
-  // NEXT 16 API: Forces an immediate, synchronous update for the dashboard
   updateTag(`knowledge-${ctx.workspace._id.toString()}`);
 
   if (queueResult.error) {
@@ -92,10 +86,6 @@ export async function createKnowledgeSourceAction(data: {
   return { success: true, sourceId: source._id.toString() };
 }
 
-/**
- * Retry Knowledge Source Queue
- * Retries sending the document to the background queue.
- */
 export async function retryKnowledgeQueueAction(sourceId: string) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
@@ -123,10 +113,7 @@ export async function retryKnowledgeQueueAction(sourceId: string) {
   return { success: true };
 }
 
-/**
- * Checks the status of an array of knowledge sources.
- * Used for real-time UI polling in both onboarding and dashboard.
- */
+
 export async function checkKnowledgeSourceStatusAction(sourceIds: string[]) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
@@ -147,9 +134,7 @@ export async function checkKnowledgeSourceStatusAction(sourceIds: string[]) {
   };
 }
 
-/**
- * Delete a knowledge source — removes from R2, vectors, and MongoDB.
- */
+
 export async function deleteKnowledgeSourceAction(sourceId: string) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
@@ -174,13 +159,11 @@ export async function deleteKnowledgeSourceAction(sourceId: string) {
     }
   }
 
-  // Delete vectors from MongoDB
   const { MongoClient } = await import("mongodb");
   const client = new MongoClient(process.env.MONGODB_URI!);
   try {
     await client.connect();
     const collection = client.db("helpdesk").collection("vectors");
-    // await collection.deleteMany({ "metadata.sourceId": sourceId });
 
     await collection.deleteMany({
       $or: [
@@ -194,18 +177,14 @@ export async function deleteKnowledgeSourceAction(sourceId: string) {
     await client.close();
   }
 
-  // Delete the record
   await KnowledgeSource.findByIdAndDelete(sourceId);
 
-  // NEXT 16 API: Bust cache
   updateTag(`knowledge-${ctx.workspace._id.toString()}`);
 
   return { success: true };
 }
 
-/**
- * Retry a failed knowledge source.
- */
+
 export async function retryKnowledgeSourceAction(sourceId: string) {
   const ctx = await resolveUserWorkspace();
   if (!ctx) return { error: "Unauthorized" };
@@ -227,7 +206,6 @@ export async function retryKnowledgeSourceAction(sourceId: string) {
     return { error: "Failed to queue retry job. Please ensure Inngest dev server is running." };
   }
 
-  // NEXT 16 API: Bust cache
   updateTag(`knowledge-${ctx.workspace._id.toString()}`);
 
   return { success: true };

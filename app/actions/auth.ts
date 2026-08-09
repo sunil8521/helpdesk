@@ -189,7 +189,7 @@ export async function requestPasswordResetAction(email: string) {
     await PasswordReset.findOneAndUpdate(
       { email: cleanEmail },
       { code, expiresAt },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     await sendPasswordResetEmail(cleanEmail, code);

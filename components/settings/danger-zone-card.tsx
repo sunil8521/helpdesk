@@ -8,7 +8,7 @@ export function DangerZoneCard({ role }: { role?: string }) {
   const isOwner = role === "owner";
   return (
     <SettingsCard title="Danger Zone" desc="Destructive workspace operations" icon={AlertTriangle} danger>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="font-bold text-[14.5px] text-red-800">Delete Workspace</div>
           <p className="text-[12.5px] text-red-600/70">Permanently delete workspace, all conversations, and trained vector data.</p>

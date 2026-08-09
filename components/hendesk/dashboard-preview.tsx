@@ -18,9 +18,9 @@ export function DashboardPreview() {
       </div>
 
       {/* Content */}
-      <div className="grid grid-cols-[190px_1fr] h-[400px]">
+      <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] h-[400px]">
         {/* Sidebar */}
-        <div className="border-r border-border/50 bg-[oklch(0.99_0.002_260)] flex flex-col">
+        <div className="hidden sm:flex border-r border-border/50 bg-[oklch(0.99_0.002_260)] flex-col">
           <div className="p-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-[7px] h-3.5 w-3.5 text-foreground/25" />

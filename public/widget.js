@@ -21,8 +21,8 @@
     bottom: "20px",
     right: "20px",
     zIndex: "2147483647", // Maximum 32-bit integer z-index
-    width: "60px",
-    height: "60px",
+    width: "80px",
+    height: "80px",
     borderRadius: "50%",
     overflow: "hidden",
     boxShadow: "none",
@@ -60,14 +60,18 @@
         container.style.height = "580px";
         container.style.borderRadius = "24px";
         iframe.style.borderRadius = "24px";
-        container.style.overflow = "hidden";
         container.style.boxShadow = "0 24px 60px -12px rgba(0,0,0,0.25)";
+      } else if (payload?.showPopup) {
+        container.style.width = "340px";
+        container.style.height = "160px";
+        container.style.borderRadius = "24px";
+        iframe.style.borderRadius = "24px";
+        container.style.boxShadow = "none";
       } else {
-        container.style.width = "60px";
-        container.style.height = "60px";
+        container.style.width = "80px";
+        container.style.height = "80px";
         container.style.borderRadius = "50%";
-        iframe.style.borderRadius = "50%";
-        container.style.overflow = "hidden";
+        iframe.style.borderRadius = "24px"; // internal iframe border radius doesn't matter much when container clips or is transparent
         container.style.boxShadow = "none";
       }
 

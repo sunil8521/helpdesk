@@ -38,7 +38,7 @@ export function WidgetPreview({
 
   return (
     <div className={cn(
-      "w-[370px] h-[600px] max-h-[75vh] flex flex-col rounded-3xl bg-card border border-border/50 overflow-hidden select-none",
+      "w-full sm:w-[370px] h-[600px] max-h-[75vh] flex flex-col rounded-3xl bg-card border border-border/50 overflow-hidden select-none",
       "shadow-[0_28px_80px_-16px_rgba(0,0,0,0.2)] transition-all duration-300",
       compact && "w-[310px]",
       className

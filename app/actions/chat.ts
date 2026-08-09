@@ -279,8 +279,7 @@ export async function sendMessageToAi(params: {
       content: aiText,
     });
 
-    // To correctly check if a tool was called in THIS turn (and ignore old turns),
-    // we must look at all messages generated AFTER the user's latest message.
+    
     const lastHumanIdx = result.messages.findLastIndex((m: any) => m._getType() === "human");
     const currentTurnMessages = result.messages.slice(lastHumanIdx + 1);
 
@@ -293,8 +292,7 @@ export async function sendMessageToAi(params: {
     if (escalated) {
       const reason = escalateCall.args?.reason || "User requested human handoff.";
 
-      // The AI decided to escalate, so we trigger the DB update and socket emits here.
-      // This centralizes the logic in one place (chat.ts) as requested!
+      
       const handoffResult = await routingService.requestHumanHandoff({
         conversationId,
         reason,

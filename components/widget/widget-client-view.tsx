@@ -16,19 +16,20 @@ import {
   Palette,
   Sliders,
   Code2,
-  Loader2,
   HelpCircle,
   Plus,
-  Trash2
+  Trash2,
+  Users,
+  Loader2
 } from "lucide-react";
 
-export function WidgetClientView({ 
-  initialConfig, 
+export function WidgetClientView({
+  initialConfig,
   workspaceId,
   agentInfo,
   role,
   initialFaqs
-}: { 
+}: {
   initialConfig: any;
   workspaceId: string;
   agentInfo?: { name: string; role: string } | null;
@@ -42,6 +43,19 @@ export function WidgetClientView({
   const [btn, setBtn] = useState(initialConfig.buttonColor);
   const [position, setPosition] = useState<"right" | "left">(initialConfig.position);
   const [proactive, setProactive] = useState(initialConfig.proactiveMessage);
+
+  // Lead Capture State
+  const [leadCaptureEnabled, setLeadCaptureEnabled] = useState(initialConfig.leadCapture?.enabled || false);
+  const [leadCaptureFields, setLeadCaptureFields] = useState<string[]>(initialConfig.leadCapture?.requiredFields || ["name", "email"]);
+
+  const toggleLeadField = (field: string) => {
+    if (leadCaptureFields.includes(field)) {
+      setLeadCaptureFields(leadCaptureFields.filter(f => f !== field));
+    } else {
+      setLeadCaptureFields([...leadCaptureFields, field]);
+    }
+  };
+
   const [avatarUrl] = useState(initialConfig.avatarUrl);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -60,7 +74,7 @@ export function WidgetClientView({
     try {
       const res = await addFaqAction(newQuestion, newAnswer);
       if (res.error) throw new Error(res.error);
-      
+
       // Optimistic update
       setFaqs([{ _id: Date.now().toString(), question: newQuestion, answer: newAnswer }, ...faqs]);
       setNewQuestion("");
@@ -78,7 +92,7 @@ export function WidgetClientView({
     try {
       const res = await deleteFaqAction(id);
       if (res.error) throw new Error(res.error);
-      
+
       // Optimistic update
       setFaqs(faqs.filter((f: any) => f._id !== id));
       toast.add({ title: "FAQ Deleted", description: "Successfully removed FAQ", type: "success" });
@@ -99,6 +113,10 @@ export function WidgetClientView({
         buttonColor: btn,
         position,
         proactiveMessage: proactive,
+        leadCapture: {
+          enabled: leadCaptureEnabled,
+          requiredFields: leadCaptureFields
+        }
       });
       if (res.error) throw new Error(res.error);
       toast.add({ title: "Success", description: "Widget settings saved", type: "success" });
@@ -144,8 +162,8 @@ export function WidgetClientView({
                 </h3>
                 <p className="text-[12.5px] text-foreground/45 mt-0.5">Control how your chat widget looks to visitors</p>
               </div>
-              <Button 
-                onClick={handleSave} 
+              <Button
+                onClick={handleSave}
                 disabled={isSaving || isAgent}
                 title={isAgent ? "Only admins and owners can modify widget settings" : undefined}
                 className={`h-10 px-5 rounded-xl bg-brand text-white font-bold shadow-md shadow-brand/20 transition-all shrink-0 ${isAgent ? 'cursor-not-allowed opacity-50' : 'hover:bg-brand/90 cursor-pointer'}`}
@@ -192,18 +210,16 @@ export function WidgetClientView({
                   <button
                     type="button"
                     onClick={() => setPosition("left")}
-                    className={`p-3.5 rounded-2xl border-2 text-left font-semibold text-[13.5px] transition-all cursor-pointer ${
-                      position === "left" ? "border-brand bg-brand/4 text-brand" : "border-border/50 bg-background text-foreground/70"
-                    }`}
+                    className={`p-3.5 rounded-2xl border-2 text-left font-semibold text-[13.5px] transition-all cursor-pointer ${position === "left" ? "border-brand bg-brand/4 text-brand" : "border-border/50 bg-background text-foreground/70"
+                      }`}
                   >
                     Left Side
                   </button>
                   <button
                     type="button"
                     onClick={() => setPosition("right")}
-                    className={`p-3.5 rounded-2xl border-2 text-left font-semibold text-[13.5px] transition-all cursor-pointer ${
-                      position === "right" ? "border-brand bg-brand/4 text-brand" : "border-border/50 bg-background text-foreground/70"
-                    }`}
+                    className={`p-3.5 rounded-2xl border-2 text-left font-semibold text-[13.5px] transition-all cursor-pointer ${position === "right" ? "border-brand bg-brand/4 text-brand" : "border-border/50 bg-background text-foreground/70"
+                      }`}
                   >
                     Right Side
                   </button>
@@ -232,6 +248,46 @@ export function WidgetClientView({
             </div>
           </div>
 
+          {/* Lead Capture Settings */}
+          <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-5">
+            <div>
+              <h3 className="font-bold text-[17px] tracking-tight flex items-center gap-2">
+                <Users className="h-4.5 w-4.5 text-brand" /> Lead Capture
+              </h3>
+              <p className="text-[12.5px] text-foreground/45 mt-0.5">Ask visitors for their contact details before they chat.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <Label className="text-[14px] font-semibold">Enable Pre-Chat Form</Label>
+                  <p className="text-[12.5px] text-foreground/45">Show a form before the user can start chatting.</p>
+                </div>
+                <Switch checked={leadCaptureEnabled} onCheckedChange={setLeadCaptureEnabled} />
+              </div>
+
+              {leadCaptureEnabled && (
+                <div className="bg-muted/30 p-4 rounded-2xl border border-border/50 space-y-3 animate-in fade-in slide-in-from-top-2">
+                  <Label className="text-[13px] font-semibold block mb-2">Required Fields</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {["name", "email", "phone"].map(field => (
+                      <label key={field} className="flex items-center gap-2 text-[13px] cursor-pointer hover:text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={leadCaptureFields.includes(field)}
+                          disabled={field === "email"} // Email usually required if lead capture is on
+                          onChange={() => toggleLeadField(field)}
+                          className="rounded-sm border-border accent-brand w-4 h-4"
+                        />
+                        {field === "name" ? "Full Name" : field === "email" ? "Email (Required)" : "Phone"}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* FAQ Settings */}
           <div className="rounded-3xl border border-border/50 bg-card p-6 shadow-2xs space-y-5">
             <div>
@@ -248,7 +304,7 @@ export function WidgetClientView({
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
                   placeholder="e.g., What are your support hours?"
-                  className="bg-background"
+                  className="bg-background h-10 text-[13px] placeholder:text-[12.5px]"
                 />
               </div>
               <div className="space-y-1.5">
@@ -257,12 +313,12 @@ export function WidgetClientView({
                   value={newAnswer}
                   onChange={(e) => setNewAnswer(e.target.value)}
                   placeholder="Provide a clear, helpful answer..."
-                  className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                  className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2 text-[13px] placeholder:text-[12.5px] ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                 />
               </div>
-              <Button 
-                type="submit" 
-                size="sm" 
+              <Button
+                type="submit"
+                size="sm"
                 className="w-full sm:w-auto font-bold rounded-xl"
                 disabled={isAddingFaq || !newQuestion.trim() || !newAnswer.trim()}
               >
@@ -326,11 +382,11 @@ export function WidgetClientView({
         </div>
 
         <Tabs defaultValue="script" className="space-y-4">
-          <TabsList className="bg-[oklch(0.985_0.003_260)] border border-border/40 p-1 rounded-2xl h-11 w-fit gap-1">
-            <TabsTrigger value="script" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">Custom HTML</TabsTrigger>
-            <TabsTrigger value="wp" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">WordPress</TabsTrigger>
-            <TabsTrigger value="wix" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">Wix</TabsTrigger>
-            <TabsTrigger value="webflow" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all">Webflow</TabsTrigger>
+          <TabsList className="bg-[oklch(0.985_0.003_260)] border border-border/40 p-1 rounded-2xl h-11 flex items-center justify-start overflow-x-auto whitespace-nowrap w-full sm:w-fit gap-1 no-scrollbar">
+            <TabsTrigger value="script" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all shrink-0">Custom HTML</TabsTrigger>
+            <TabsTrigger value="wp" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all shrink-0">WordPress</TabsTrigger>
+            <TabsTrigger value="wix" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all shrink-0">Wix</TabsTrigger>
+            <TabsTrigger value="webflow" className="rounded-xl px-4 h-9 text-[13px] font-semibold data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer transition-all shrink-0">Webflow</TabsTrigger>
           </TabsList>
 
           <TabsContent value="script" className="outline-none">
@@ -379,14 +435,19 @@ export function WidgetClientView({
 
 function ScriptBlock({ script, copied, onCopy }: { script: string; copied: boolean; onCopy: () => void }) {
   return (
-    <div className="relative rounded-2xl bg-[#0b1020] text-slate-100 font-mono text-[12.5px] p-5 overflow-x-auto leading-relaxed">
-      <button
-        className="absolute top-3 right-3 text-slate-100 bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 text-[12px] font-sans font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-        onClick={onCopy}
-      >
-        {copied ? <><CheckCircle2 className="h-4 w-4 text-emerald" /> Copied</> : <><Copy className="h-4 w-4" /> Copy Snippet</>}
-      </button>
-      <span className="break-all">{script}</span>
+    <div className="rounded-2xl bg-[#0b1020] text-slate-100 font-mono text-[12.5px] p-4 sm:p-5 overflow-hidden leading-relaxed space-y-3">
+      <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+        <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-slate-400">HTML Script Snippet</span>
+        <button
+          className="text-slate-100 bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1 text-[12px] font-sans font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+          onClick={onCopy}
+        >
+          {copied ? <><CheckCircle2 className="h-3.5 w-3.5 text-emerald" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy Snippet</>}
+        </button>
+      </div>
+      <div className="overflow-x-auto pt-1">
+        <code className="break-all block">{script}</code>
+      </div>
     </div>
   );
 }

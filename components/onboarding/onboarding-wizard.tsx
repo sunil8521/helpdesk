@@ -81,7 +81,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
       agentName: "",
       agentRole: "",
       agentPrompt: "",
-      avatarUrl: AVATAR_OPTIONS[0]?.url || "https://api.dicebear.com/9.x/bottts/svg?seed=Maya",
+      avatarUrl: AVATAR_OPTIONS[0]?.url || "https://api.dicebear.com/10.x/open-peeps/svg?seed=Maya",
       tone: "Friendly",
       responseLength: "Minimalist",
       greetingMsg: "Hi 👋 How can we help today?",
@@ -100,11 +100,12 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
     const intervalId = setInterval(async () => {
       const idsToPoll = activeSources.map(s => s.id);
       const res = await checkKnowledgeSourceStatusAction(idsToPoll);
-      if (res.success && res.statuses) {
-        activeSources.forEach(s => {
-          const newStatus = res.statuses[s.id]?.status;
+      if (res.success && res.sources) {
+        const statusMap = new Map(res.sources.map((s) => [s.id, s.status]));
+        activeSources.forEach((s) => {
+          const newStatus = statusMap.get(s.id);
           if (newStatus && s.status !== newStatus) {
-            if (newStatus === "ready") {
+            if (newStatus === "completed") {
               toast.add({ title: "Processing Complete", description: `"${s.title}" is ready!`, type: "success" });
             } else if (newStatus === "failed") {
               toast.add({ title: "Processing Failed", description: `Failed to process "${s.title}".`, type: "error" });
@@ -112,12 +113,15 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
           }
         });
 
-        setUploadedSources((prev) => prev.map((s) => {
-          if (res.statuses[s.id]) {
-            return { ...s, status: res.statuses[s.id].status };
-          }
-          return s;
-        }));
+        setUploadedSources((prev) =>
+          prev.map((s) => {
+            const newStatus = statusMap.get(s.id);
+            if (newStatus) {
+              return { ...s, status: newStatus as any };
+            }
+            return s;
+          })
+        );
       }
     }, 3000);
 
@@ -326,7 +330,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
                         onChange={(e) => {
                           const val = e.target.value.trim();
                           if (val) {
-                            setValue("avatarUrl", `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(val)}`);
+                            setValue("avatarUrl", `https://api.dicebear.com/10.x/open-peeps/svg?seed=${encodeURIComponent(val)}`);
                           }
                         }}
                       />
@@ -527,7 +531,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
             title={formValues.agentName || "Agent Name"}
             agentName={formValues.agentName || "Agent"}
             agentRole={formValues.agentRole || "Support"}
-            avatarUrl={formValues.avatarUrl || "https://api.dicebear.com/9.x/bottts/svg?seed=fallback"}
+            avatarUrl={formValues.avatarUrl || "https://api.dicebear.com/10.x/open-peeps/svg?seed=fallback"}
             greeting={formValues.greetingMsg || "Hello! How can I help?"}
             themeColor={formValues.themeColor || "#4f46e5"}
             buttonColor={formValues.themeColor || "#4f46e5"}
@@ -592,7 +596,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
               title={formValues.agentName || "Agent Name"}
               agentName={formValues.agentName || "Agent"}
               agentRole={formValues.agentRole || "Support"}
-              avatarUrl={formValues.avatarUrl || "https://api.dicebear.com/9.x/bottts/svg?seed=fallback"}
+              avatarUrl={formValues.avatarUrl || "https://api.dicebear.com/10.x/open-peeps/svg?seed=fallback"}
               greeting={formValues.greetingMsg || "Hello! How can I help?"}
               themeColor={formValues.themeColor || "#4f46e5"}
               buttonColor={formValues.themeColor || "#4f46e5"}

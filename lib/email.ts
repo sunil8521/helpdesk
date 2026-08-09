@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 
+// Get configured Nodemailer transport
 function getTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
@@ -12,6 +13,7 @@ function getTransporter() {
   });
 }
 
+// Send team workspace invitation email
 export async function sendWorkspaceInviteEmail(input: {
   to: string; workspaceName: string; inviterName: string; role: "owner" | "admin" | "agent"; token: string;
 }) {
@@ -41,6 +43,7 @@ export async function sendWorkspaceInviteEmail(input: {
   });
 }
 
+// Send password reset OTP code email
 export async function sendPasswordResetEmail(email: string, code: string) {
   await getTransporter().sendMail({
     from: process.env.SMTP_USER,

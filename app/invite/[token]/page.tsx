@@ -65,7 +65,6 @@ async function InvitePageContent({ token }: { token: string }) {
   const workspaceName = invite.workspaceId.name;
   const email = invite.email;
 
-  // Check if a user account already exists with this email
   const existingUser = await User.findOne({ email }).lean();
   const session = await getServerSession(authOptions);
 
@@ -83,13 +82,10 @@ async function InvitePageContent({ token }: { token: string }) {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         {!existingUser ? (
-          // New User: Needs to register
           <InviteSignupForm email={email} token={token} />
         ) : (
-          // Existing User
           <div className="bg-card py-8 px-6 sm:px-10 rounded-3xl border border-border/50 shadow-xl text-center space-y-6">
             {!session ? (
-              // Not logged in
               <>
                 <p className="text-[14px] text-foreground/70">
                   An account with <strong>{email}</strong> already exists. Please log in to accept this invitation.
@@ -101,7 +97,6 @@ async function InvitePageContent({ token }: { token: string }) {
                 </Link>
               </>
             ) : session.user?.email !== email ? (
-              // Logged in with wrong email
               <>
                 <p className="text-[14px] text-foreground/70">
                   This invite is for <strong>{email}</strong>, but you are logged in as <strong>{session.user?.email}</strong>.
@@ -111,7 +106,6 @@ async function InvitePageContent({ token }: { token: string }) {
                 </p>
               </>
             ) : (
-              // Logged in with correct email - can accept directly via server action form
               <form action={async () => {
                 "use server";
                 await acceptInviteAction(token);

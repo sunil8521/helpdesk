@@ -17,6 +17,7 @@ export interface FormattedTeamMember {
   updatedAt?: Date;
 }
 
+// Fetch team members for the active workspace
 export async function getTeamMembers() {
   try {
     const ctx = await resolveUserWorkspace();
@@ -35,6 +36,7 @@ export async function getTeamMembers() {
   }
 }
 
+// Cached query to fetch team members populated with user profiles
 async function fetchTeamMembersCached(workspaceObjectId: string, workspaceName: string) {
   "use cache";
   cacheLife("minutes");

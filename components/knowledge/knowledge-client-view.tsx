@@ -1,45 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { documents, chunks } from "@/lib/mock-data";
-import { useSocket } from "@/lib/chat/use-socket";
 import { getAgentSocketToken } from "@/app/actions/chat";
+import {
+  deleteKnowledgeSourceAction,
+  retryKnowledgeQueueAction
+} from "@/app/actions/knowledge";
 import { StatusBadge } from "@/components/hendesk/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
-import { validateFileSignature } from "@/lib/utils/file-validation";
-import { uploadFileDirectToR2 } from "@/lib/storage/client-upload";
+import { useSocket } from "@/lib/chat/use-socket";
 import {
-  deleteKnowledgeSourceAction,
-  checkKnowledgeSourceStatusAction,
-  createKnowledgeSourceAction,
-  retryKnowledgeQueueAction,
-} from "@/app/actions/knowledge";
-import {
-  UploadCloud,
-  FileText,
-  Search,
-  RefreshCw,
-  Plus,
-  Globe,
-  Sparkles,
-  Database,
-  CheckCircle2,
-  Loader2,
-  ExternalLink,
-  Trash2,
-  Eye,
-  X,
-  Layers,
-  Filter,
-  ArrowRight,
   Activity,
+  CheckCircle2,
+  Database,
+  ExternalLink,
+  FileText,
+  Globe,
+  Layers,
+  Loader2,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Trash2
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export interface SerializedKnowledgeSource {
   _id: string;
@@ -197,18 +183,7 @@ export function KnowledgeClientView({ initialSources, workspaceId, role }: Knowl
 
   return (
     <div className="space-y-8 font-sans">
-      {/* Top Action Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-[12px] font-bold uppercase tracking-[0.15em] text-brand bg-brand/8 px-3 py-1 rounded-full">
-            RAG Knowledge Base
-          </span>
-          <h1 className="mt-2.5 text-[28px] sm:text-[36px] font-bold tracking-[-0.03em] leading-tight">
-            Knowledge <em className="font-display not-italic italic text-brand">Base</em>
-          </h1>
-          <p className="mt-1 text-[14.5px] text-foreground/50">Manage documents, scraped URLs, raw text, and vector embeddings cited by your AI agent.</p>
-        </div>
-      </div>
+
 
 
 
@@ -255,11 +230,11 @@ export function KnowledgeClientView({ initialSources, workspaceId, role }: Knowl
 
       {/* Knowledge Sources Table Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[18px] font-bold text-foreground tracking-tight">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <h2 className="text-[16px] sm:text-[18px] font-bold text-foreground tracking-tight whitespace-nowrap">
             Knowledge Sources ({sources.length})
           </h2>
-          <div className="relative w-72">
+          <div className="relative w-full sm:w-72">
             <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-foreground/35" />
             <Input
               value={searchQuery}

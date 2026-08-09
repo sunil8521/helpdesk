@@ -1,8 +1,11 @@
+// import { updateTag } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { Conversation } from "../db/models/Conversation";
 import { searchWorkspaceVectorsWithScores } from "./vector-store";
 import type { HumanFallbackBehavior } from "./agent-instructions";
+import { emitVisitorProfileUpdated } from "../chat/socket-notify";
 
 const MAX_CONTEXT_CHARS_PER_RESULT = 1_200;
 
@@ -45,6 +48,19 @@ export const captureUserDetailsTool = new DynamicStructuredTool({
         convo.visitor.name = name;
         convo.visitor.email = email;
         await convo.save();
+
+        // Emit real-time socket event so the capture lead section updates instantly
+        await emitVisitorProfileUpdated(
+          convo.workspaceId.toString(),
+          convo._id.toString(),
+          convo.visitorId,
+          { name, email }
+        );
+
+        // Invalidate the leads cache so the dashboard updates
+        revalidateTag(`leads-${convo.workspaceId.toString()}`, "seconds");
+        revalidatePath("/dashboard/leads", "page");
+
         return `Successfully updated user details to Name: ${name}, Email: ${email}`;
       }
       return "Conversation not found, but details received.";
@@ -61,9 +77,7 @@ export const escalateToHumanTool = new DynamicStructuredTool({
     reason: z.string().describe("The specific reason the user needs a human agent"),
   }),
   func: async ({ reason }, runManager, config) => {
-    // We just return a success string here.
-    // The actual database mutation, system message creation, and socket emit 
-    // will be handled centrally in chat.ts after the graph finishes.
+
     return `Escalated to human support successfully. Reason: ${reason}. Please inform the user that a human agent has been notified and will be with them shortly.`;
   },
 });

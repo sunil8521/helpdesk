@@ -35,6 +35,7 @@ const ConversationSchema = new Schema<IConversation>(
     visitor: {
       name: { type: String, required: true, default: "Anonymous Visitor" },
       email: { type: String, default: "" },
+      phone: { type: String, default: "" },
       device: { type: String, default: "Desktop / Chrome" },
       currentPage: { type: String, default: "/" },
     },
