@@ -1,6 +1,6 @@
 # 🎧 HelpDesk — AI-Powered Customer Support Platform
 
-> An intelligent help desk SaaS that lets businesses deploy a customizable AI chat widget on their website. Visitors chat with a **LangGraph-powered AI agent** backed by a knowledge base — and when needed, conversations seamlessly escalate to human agents in real-time.
+> An intelligent help desk  that lets businesses deploy a customizable AI chat widget on their website. Visitors chat with a **LangGraph-powered AI agent** backed by a knowledge base — and when needed, conversations seamlessly escalate to human agents in real-time.
 
 ---
 

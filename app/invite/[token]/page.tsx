@@ -3,8 +3,6 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Invite } from "@/lib/db/models/Invite";
 import { User } from "@/lib/db/models/User";
-import { Workspace } from "@/lib/db/models/Workspace";
-import { WorkspaceMember } from "@/lib/db/models/WorkspaceMember";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HelpdeskLogo } from "@/components/hendesk/logo";
@@ -13,9 +11,8 @@ import { acceptInviteAction } from "@/app/actions/auth";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 
-export default async function InvitePage(props: { params: Promise<{ token: string }> }) {
-  const params = await props.params;
-  
+// 1. Keep the main Page synchronous or pass the raw params promise directly downstream
+export default function InvitePage(props: { params: Promise<{ token: string }> }) {
   return (
     <Suspense 
       fallback={
@@ -25,12 +22,16 @@ export default async function InvitePage(props: { params: Promise<{ token: strin
         </div>
       }
     >
-      <InvitePageContent token={params.token} />
+      {/* Pass the promise itself into the Suspense-wrapped child */}
+      <InvitePageContent paramsPromise={props.params} />
     </Suspense>
   );
 }
 
-async function InvitePageContent({ token }: { token: string }) {
+// 2. Resolve both your params promise and your dynamic session data inside the wrapper
+async function InvitePageContent({ paramsPromise }: { paramsPromise: Promise<{ token: string }> }) {
+  const { token } = await paramsPromise;
+  
   await connectToDatabase();
 
   const invite = await Invite.findOne({ token, status: "pending" })
@@ -66,6 +67,8 @@ async function InvitePageContent({ token }: { token: string }) {
   const email = invite.email;
 
   const existingUser = await User.findOne({ email }).lean();
+  
+  // Dynamic header/session evaluation happens safely inside Suspense boundary now
   const session = await getServerSession(authOptions);
 
   return (

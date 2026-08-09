@@ -10,7 +10,25 @@ import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { UserHeaderSection } from "@/components/onboarding/user-header-section";
 import { redirect } from "next/navigation";
 
-export default async function OnboardingPage() {
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+export default function OnboardingPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[oklch(0.985_0.003_260)] font-sans">
+          <Loader2 className="h-10 w-10 animate-spin text-brand mb-4" />
+          <p className="text-foreground/50 text-[14px]">Loading...</p>
+        </div>
+      }
+    >
+      <OnboardingPageContent />
+    </Suspense>
+  );
+}
+
+async function OnboardingPageContent() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
 
