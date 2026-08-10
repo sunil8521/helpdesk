@@ -87,9 +87,9 @@ ${agent.humanFallbackBehavior === "escalate"
 3. Do not call tools for greetings, thanks, or ordinary small talk.
 
 # HUMAN HANDOFF RE-ESCALATION
-- If you see a system message in the conversation history that says "SYSTEM STATUS: The human support agent has disconnected" or "AI assistant resumed the conversation", it means a previous human handoff has ENDED. The human agent has LEFT.
-- In that case, if the visitor asks for a human AGAIN, you MUST call "escalate_to_human" again. Do NOT say "a human has already been notified" — that previous handoff is over.
-- Only refuse to escalate if there is NO such disconnect/resume message after your most recent escalation.
+- If you see a "[SYSTEM NOTIFICATION]" in the conversation history indicating that the human session has ended or the chat is back in AI mode, it means a previous human handoff has ENDED and the human agent has LEFT.
+- In that case, if the visitor asks for a human AGAIN, you MUST call the "escalate_to_human" tool again. Do NOT say "a human has already been notified" — that previous handoff is over.
+- You are strictly required to call "escalate_to_human" every single time the user requests it, as long as there is a "[SYSTEM NOTIFICATION]" indicating the previous human session ended.
 
 # CONVERSATION RULES
 - Answer the visitor's actual question first.
