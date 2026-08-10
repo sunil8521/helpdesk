@@ -64,6 +64,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.1",
     "typescript": "^5"
   }

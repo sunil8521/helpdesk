@@ -1,5 +1,5 @@
 import { getWidgetConfig } from "@/app/queries/widget";
-import { getFaqsAction } from "@/app/actions/faq";
+import { getFaqs } from "@/app/queries/faq";
 import { WidgetClientView } from "@/components/widget/widget-client-view";
 import { redirect } from "next/navigation";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
@@ -17,7 +17,7 @@ async function WidgetDataStreamer() {
   if (!ctx) redirect("/login");
 
   const res = await getWidgetConfig(ctx.workspace._id.toString(), ctx.workspace.workspaceId);
-  const initialFaqs = await getFaqsAction(ctx.workspace._id.toString());
+  const initialFaqs = await getFaqs(ctx.workspace._id.toString());
 
   if (!res.success) {
     return (

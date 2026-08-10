@@ -33,7 +33,7 @@ async function InvitePageContent({ paramsPromise }: { paramsPromise: Promise<{ t
   const { token } = await paramsPromise;
   
   await connectToDatabase();
-
+  
   const invite = await Invite.findOne({ token, status: "pending" })
     .populate<{ workspaceId: any }>("workspaceId", "name")
     .lean();

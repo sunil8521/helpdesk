@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getPublicWidgetConfigBySlug } from "@/app/queries/widget";
-import { getFaqsAction } from "@/app/actions/faq";
+import { getFaqs } from "@/app/queries/faq";
 import { WidgetEmbedClient } from "@/components/widget/widget-embed-client";
 
 interface EmbedPageProps {
@@ -49,7 +49,7 @@ async function WidgetEmbedContent({ searchParams }: { searchParams: Promise<{ wo
   const safeConfig = JSON.parse(JSON.stringify(config));
   const safeAgent = JSON.parse(JSON.stringify(agent));
 
-  const faqs = await getFaqsAction(res.workspaceOid!);
+  const faqs = await getFaqs(res.workspaceOid!);
 
   return (
     <WidgetEmbedClient
