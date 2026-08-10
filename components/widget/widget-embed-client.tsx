@@ -162,7 +162,7 @@ export function WidgetEmbedClient({
 
         setConversationId(ticketResult.conversationId);
 
-        const socket: TypedSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+        const socket: TypedSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
           auth: { token: ticketResult.ticket, clientType: "visitor" },
           transports: ["websocket", "polling"],
           reconnection: true,
@@ -840,6 +840,7 @@ export function WidgetEmbedClient({
           >
             {avatarUrl ? (
               <Image
+                priority
                 src={avatarUrl}
                 alt={agentName}
                 width={72}

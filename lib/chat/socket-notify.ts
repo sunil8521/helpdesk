@@ -1,4 +1,4 @@
-const PORT = process.env.WS_PORT || "3001";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL as string;
 
 export async function emitVisitorProfileUpdated(
   workspaceId: string,
@@ -7,7 +7,7 @@ export async function emitVisitorProfileUpdated(
   visitorUpdates: any
 ) {
   try {
-    await fetch(`http://127.0.0.1:${PORT}/api/internal/socket-emit`, {
+    await fetch(`${SOCKET_URL}/api/internal/socket-emit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -33,7 +33,7 @@ export async function emitRouteChangedEvent(
   systemMessage?: any
 ) {
   try {
-    await fetch(`http://127.0.0.1:${PORT}/api/internal/socket-emit`, {
+    await fetch(`${SOCKET_URL}/api/internal/socket-emit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -58,7 +58,7 @@ export async function emitListUpdateWithData(
   assignedAgentName?: string
 ) {
   try {
-    await fetch(`http://127.0.0.1:${PORT}/api/internal/socket-emit`, {
+    await fetch(`${SOCKET_URL}/api/internal/socket-emit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

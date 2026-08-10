@@ -5,7 +5,8 @@
   "scripts": {
     "dev:next": "next dev",
     "dev:ws": "node --env-file=.env.local --import tsx websocket.ts",
-    "dev": "concurrently \"pnpm run dev:next\" \"pnpm run dev:ws\"",
+    "dev:inngest": "pnpm dlx inngest-cli@latest dev",
+    "dev": "concurrently \"pnpm run dev:next\" \"pnpm run dev:ws\" \"pnpm run dev:inngest\"",
     "build": "next build",
     "start:next": "next start",
     "start:ws": "node --import tsx websocket.ts",

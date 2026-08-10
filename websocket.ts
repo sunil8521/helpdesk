@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import { initSocketServer, getIO } from "./lib/chat/socket-server";
 
-const port = parseInt(process.env.WS_PORT!);
+const port = parseInt(process.env.WS_PORT! || process.env.PORT!, 10);
 const hostname = "0.0.0.0";
 
 const httpServer = createServer((req, res) => {

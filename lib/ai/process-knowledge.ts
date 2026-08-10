@@ -7,16 +7,9 @@ import { r2Client, getR2PublicUrl } from "@/lib/r2";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
 
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "javarag";
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 
-/**
- * Core knowledge processing pipeline.
- * 1. Fetch content (from R2 or inline text)
- * 2. Create LangChain Documents
- * 3. Split into chunks
- * 4. Embed + store in MongoDB Atlas Vector Search
- * 5. Update KnowledgeSource status
- */
+
 export async function processKnowledgeSource(
   sourceId: string,
   workspaceId: string
@@ -30,7 +23,8 @@ export async function processKnowledgeSource(
 
   const emitProgress = async (status: "uploaded" | "queued" | "completed" | "failed" | "unable_to_queue", progress: number, error?: string, chunksCount?: number) => {
     try {
-      await fetch("http://127.0.0.1:3000/api/internal/socket-emit", {
+      const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL as string;
+      await fetch(`${SOCKET_URL}/api/internal/socket-emit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
