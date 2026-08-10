@@ -27,7 +27,7 @@ export function useSocket({ clientType, token, enabled = true }: UseSocketOption
     if (!enabled || !token) return;
 
     // Connect to the same origin (custom server serves both Next.js and Socket.IO)
-    const socket: TypedSocket = io({
+    const socket: TypedSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
       auth: { token, clientType },
       transports: ["websocket", "polling"],
       reconnection: true,

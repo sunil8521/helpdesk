@@ -18,8 +18,7 @@ import type {
   SocketData,
   SocketMessage,
 } from "./socket-events";
-import { getCompiledGraph } from "@/lib/ai/graph";
-import { SystemMessage } from "@langchain/core/messages";
+
 // Singleton reference
 let io: SocketIOServer<
   ClientToServerEvents,
@@ -49,6 +48,19 @@ function serializeMessage(msg: any): SocketMessage {
     metadata: msg.metadata,
     createdAt: msg.createdAt?.toISOString?.() || new Date().toISOString(),
   };
+}
+
+async function updateAiSessionState(threadId: string, content: string) {
+  const [{ getCompiledGraph }, { SystemMessage }] = await Promise.all([
+    import("@/lib/ai/graph"),
+    import("@langchain/core/messages"),
+  ]);
+
+  const graph = await getCompiledGraph();
+  await graph.updateState(
+    { configurable: { thread_id: threadId } },
+    { messages: [new SystemMessage(content)] }
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -409,16 +421,10 @@ export function initSocketServer(httpServer: HTTPServer) {
 
           // Use updateState to inject a message indicating the human has returned control
           try {
-            const graph = await getCompiledGraph();
-            const config = { configurable: { thread_id: result.conversation.visitorId } };
-
-            await graph.updateState(config, {
-              messages: [
-                new SystemMessage(
-                  "[SYSTEM NOTIFICATION]: The human session has ended and the chat is back in AI mode. Resume normal conversation. Do not escalate to a human unless the user explicitly asks for it again."
-                )
-              ]
-            });
+            await updateAiSessionState(
+              result.conversation.visitorId,
+              "[SYSTEM NOTIFICATION]: The human session has ended and the chat is back in AI mode. Resume normal conversation. Do not escalate to a human unless the user explicitly asks for it again."
+            );
           } catch (e) {
             console.error("Failed to update LangGraph state on return to AI:", e);
           }
@@ -477,16 +483,10 @@ export function initSocketServer(httpServer: HTTPServer) {
 
         // Use updateState to inject a message indicating the human has resolved the issue
         try {
-          const graph = await getCompiledGraph();
-          const config = { configurable: { thread_id: result.conversation.visitorId } };
-
-          await graph.updateState(config, {
-            messages: [
-              new SystemMessage(
-                "[SYSTEM NOTIFICATION]: The human support agent has resolved the issue and ended the session. The user may ask new questions."
-              )
-            ]
-          });
+          await updateAiSessionState(
+            result.conversation.visitorId,
+            "[SYSTEM NOTIFICATION]: The human support agent has resolved the issue and ended the session. The user may ask new questions."
+          );
         } catch (e) {
           console.error("Failed to update LangGraph state on resolve:", e);
         }

@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node --env-file=.env.local --import tsx server.ts",
     "dev:next": "next dev",
+    "dev:ws": "node --env-file=.env.local --import tsx websocket.ts",
+    "dev": "concurrently \"pnpm run dev:next\" \"pnpm run dev:ws\"",
     "build": "next build",
-    "start": "node --import tsx server.ts",
     "start:next": "next start",
+    "start:ws": "node --import tsx websocket.ts",
+    "start": "concurrently \"pnpm run start:next\" \"pnpm run start:ws\"",
     "lint": "eslint"
   },
   "dependencies": {
@@ -61,6 +63,7 @@
     "@types/react-dom": "^19",
     "@types/uuid": "^11.0.0",
     "babel-plugin-react-compiler": "1.0.0",
+    "concurrently": "^10.0.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",

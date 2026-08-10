@@ -1,5 +1,4 @@
-
-const PORT = process.env.PORT;
+const PORT = process.env.WS_PORT || "3001";
 
 export async function emitVisitorProfileUpdated(
   workspaceId: string,

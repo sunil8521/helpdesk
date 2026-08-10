@@ -1,7 +1,7 @@
 "use server";
 
 import crypto from "crypto";
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Invite } from "@/lib/db/models/Invite";
 import { WorkspaceMember } from "@/lib/db/models/WorkspaceMember";
@@ -57,6 +57,8 @@ export async function inviteTeamMemberAction(email: string, role: "owner" | "adm
       role,
       token,
     });
+
+    updateTag(`team-${ctx.workspace._id.toString()}`);
 
     return { success: true };
   } catch (err: any) {

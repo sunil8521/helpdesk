@@ -162,7 +162,7 @@ export function WidgetEmbedClient({
 
         setConversationId(ticketResult.conversationId);
 
-        const socket: TypedSocket = io({
+        const socket: TypedSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
           auth: { token: ticketResult.ticket, clientType: "visitor" },
           transports: ["websocket", "polling"],
           reconnection: true,

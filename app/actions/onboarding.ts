@@ -1,13 +1,10 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { connectToDatabase } from "@/lib/db/connect";
 import { User } from "@/lib/db/models/User";
 import { Agent } from "@/lib/db/models/Agent";
 import { WidgetConfig } from "@/lib/db/models/WidgetConfig";
-import { KnowledgeSource } from "@/lib/db/models/KnowledgeSource";
-import { inngest } from "@/lib/inngest/client";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 import { invalidateAgentCache } from "@/lib/ai/agent-cache";
 
@@ -58,6 +55,7 @@ export async function saveOnboardingProgressAction(data: {
     { upsert: true }
   );
 
+  updateTag(`widgetConfig-${workspace._id.toString()}`);
 
   return { success: true };
 }
@@ -85,6 +83,6 @@ export async function finishOnboardingAction(data: {
     onboardingCompleted: true,
   });
 
-  revalidatePath("/dashboard");
+  updateTag(`dashboard-${ctx.workspace._id.toString()}`);
   return { success: true };
 }

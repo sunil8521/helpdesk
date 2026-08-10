@@ -1,5 +1,5 @@
 // import { updateTag } from "next/cache";
-import { revalidateTag, revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { Conversation } from "../db/models/Conversation";
@@ -58,8 +58,7 @@ export const captureUserDetailsTool = new DynamicStructuredTool({
         );
 
         // Invalidate the leads cache so the dashboard updates
-        revalidateTag(`leads-${convo.workspaceId.toString()}`, "seconds");
-        revalidatePath("/dashboard/leads", "page");
+        updateTag(`leads-${convo.workspaceId.toString()}`);
 
         return `Successfully updated user details to Name: ${name}, Email: ${email}`;
       }

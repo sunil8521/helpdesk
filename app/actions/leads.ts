@@ -2,7 +2,7 @@
 
 import { connectToDatabase } from "@/lib/db/connect";
 import { Conversation } from "@/lib/db/models/Conversation";
-import { revalidateTag, revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import mongoose from "mongoose";
 
 export async function captureLeadAction(data: {
@@ -41,9 +41,7 @@ export async function captureLeadAction(data: {
     );
 
 
-    revalidateTag(`leads-${workspace._id.toString()}`, "seconds");
-
-    revalidatePath("/dashboard/leads");
+    updateTag(`leads-${workspace._id.toString()}`);
 
     return { success: true };
   } catch (err: any) {
