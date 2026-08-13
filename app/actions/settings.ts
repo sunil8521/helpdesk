@@ -82,3 +82,47 @@ export async function updateAgentSettingsAction(data: {
 
   return { success: true };
 }
+
+import { Conversation } from "@/lib/db/models/Conversation";
+import { Faq } from "@/lib/db/models/Faq";
+import { Invite } from "@/lib/db/models/Invite";
+import { KnowledgeSource } from "@/lib/db/models/KnowledgeSource";
+import { Message } from "@/lib/db/models/Message";
+import { Vector } from "@/lib/db/models/Vector";
+import { WidgetConfig } from "@/lib/db/models/WidgetConfig";
+import { WorkspaceMember } from "@/lib/db/models/WorkspaceMember";
+import { User } from "@/lib/db/models/User";
+
+export async function deleteWorkspaceAction() {
+  const ctx = await resolveUserWorkspace();
+  if (!ctx) return { error: "Unauthorized" };
+  if (ctx.role !== "owner") return { error: "Only the workspace owner can delete the workspace" };
+
+  await connectToDatabase();
+
+  const workspaceId = ctx.workspace._id;
+
+  // 1. Delete all related entities
+  await Promise.all([
+    Agent.deleteMany({ workspaceId }),
+    Conversation.deleteMany({ workspaceId }),
+    Faq.deleteMany({ workspaceId }),
+    Invite.deleteMany({ workspaceId }),
+    KnowledgeSource.deleteMany({ workspaceId }),
+    Message.deleteMany({ workspaceId }),
+    Vector.deleteMany({ workspaceId }),
+    WidgetConfig.deleteMany({ workspaceId }),
+    WorkspaceMember.deleteMany({ workspaceId }),
+  ]);
+
+  // 2. Delete the workspace itself
+  await Workspace.findByIdAndDelete(workspaceId);
+
+  // 3. Reset the user's onboarding state
+  await User.findByIdAndUpdate(ctx.userId, { onboardingCompleted: false });
+
+  // 4. Invalidate caches
+  invalidateAgentCache(workspaceId.toString());
+
+  return { success: true };
+}

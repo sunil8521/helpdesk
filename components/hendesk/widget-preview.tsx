@@ -30,7 +30,6 @@ export function WidgetPreview({
   position = "bottom-right",
   className,
   compact,
-  quickPrompts = ["Browse products", "Track an order"],
   initialFaqs = [],
 }: Props) {
   const [activeTab, setActiveTab] = useState<"chat" | "faq">("chat");
@@ -79,25 +78,9 @@ export function WidgetPreview({
               </div>
 
               {/* Quick Action Pill Buttons */}
-              {quickPrompts && quickPrompts.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {quickPrompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      className="text-[11px] font-semibold px-3 py-1.5 rounded-xl border border-border/60 bg-background text-foreground/80 hover:border-brand hover:text-brand transition-colors shadow-2xs"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              )}
+             
             </div>
-            
-            <div className="flex justify-center mt-6">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-[11px] font-medium text-slate-600 dark:text-slate-300 shadow-2xs">
-                <span>You cannot chat in preview mode</span>
-              </div>
-            </div>
+          
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto scrollbar-none p-4 mt-2 flex flex-col space-y-3 min-h-[220px]">

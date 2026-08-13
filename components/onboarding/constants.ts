@@ -23,7 +23,6 @@ export const AGENT_TEMPLATES = [
     role: "Customer Support Specialist",
     description:
       "Help users with product FAQs, policies, troubleshooting technical issues, and escalating to human agents when needed.",
-    prompts: ["How to reset password?", "What are your hours?", "Talk to human"],
   },
   {
     id: "ecommerce",
@@ -33,7 +32,6 @@ export const AGENT_TEMPLATES = [
     role: "E-commerce Shopping Assistant",
     description:
       "Answer product questions, explain shipping and return policies, and assist with general inquiries based on the knowledge base.",
-    prompts: ["Product info", "Shipping policies", "Return policy"],
   },
   {
     id: "tech",
@@ -43,7 +41,6 @@ export const AGENT_TEMPLATES = [
     role: "Technical Specialist",
     description:
       "Assist developers with documentation, setup steps, syntax examples, and error debugging using the provided knowledge base.",
-    prompts: ["API Docs", "Setup guide", "CORS policy"],
   },
 ];
 

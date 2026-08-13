@@ -6,7 +6,7 @@ import { getAgentSocketToken } from "@/app/actions/chat";
 import { v4 as uuidv4 } from "uuid";
 import {
   Sparkles, User, Send, UserPlus, Bot, CheckCircle2, MoreHorizontal,
-  Circle, Clock, Info, Headphones, ArrowLeft, X,
+  Circle, Clock, Info, Headphones, ArrowLeft, X, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/hendesk/status-badge";
@@ -122,6 +122,7 @@ export function ChatWindow({
   const [reply, setReply] = useState("");
   const [agentToken, setAgentToken] = useState<string | null>(null);
   const [showMobileDetails, setShowMobileDetails] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Re-sync if Server Component re-renders with new data
@@ -223,7 +224,9 @@ export function ChatWindow({
 
   const executeAction = (action: string) => {
     if (!socket) return;
+    setPendingAction(action);
     socket.emit(action as any, { conversationId: currentConvo._id }, (res: any) => {
+      setPendingAction(null);
       if (!res.ok) console.error(`Failed ${action}:`, res.error);
     });
   };
@@ -272,17 +275,17 @@ export function ChatWindow({
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {currentConvo.status === "waiting" && (
-              <Button size="sm" className="bg-emerald text-white hover:bg-emerald/90 rounded-full h-8.5 sm:h-9 px-3 sm:px-4 text-[12px] sm:text-[13px] font-semibold shadow-xs" onClick={() => executeAction("conversation:claim")}>
-                <UserPlus className="h-3.5 w-3.5 mr-1" /> Accept Handoff
+              <Button size="sm" className="bg-emerald text-white hover:bg-emerald/90 rounded-full h-8.5 sm:h-9 px-3 sm:px-4 text-[12px] sm:text-[13px] font-semibold shadow-xs" onClick={() => executeAction("conversation:claim")} disabled={pendingAction !== null}>
+                {pendingAction === "conversation:claim" ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <UserPlus className="h-3.5 w-3.5 mr-1" />} Accept Handoff
               </Button>
             )}
             {currentConvo.status === "human" && (
               <>
-                <Button size="sm" variant="outline" className="rounded-full h-8.5 sm:h-9 px-2.5 sm:px-3.5 text-[11.5px] sm:text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:return-to-ai")}>
-                  <Bot className="h-3.5 w-3.5 mr-1 text-brand" /> <span className="hidden sm:inline">Return to </span>AI
+                <Button size="sm" variant="outline" className="rounded-full h-8.5 sm:h-9 px-2.5 sm:px-3.5 text-[11.5px] sm:text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:return-to-ai")} disabled={pendingAction !== null}>
+                  {pendingAction === "conversation:return-to-ai" ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin text-brand" /> : <Bot className="h-3.5 w-3.5 mr-1 text-brand" />} <span className="hidden sm:inline">Return to </span>AI
                 </Button>
-                <Button size="sm" variant="outline" className="rounded-full h-8.5 sm:h-9 px-2.5 sm:px-3.5 text-[11.5px] sm:text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:resolve")}>
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-emerald" /> Resolve
+                <Button size="sm" variant="outline" className="rounded-full h-8.5 sm:h-9 px-2.5 sm:px-3.5 text-[11.5px] sm:text-[12.5px] font-semibold border-border/60" onClick={() => executeAction("conversation:resolve")} disabled={pendingAction !== null}>
+                  {pendingAction === "conversation:resolve" ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin text-emerald" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-emerald" />} Resolve
                 </Button>
               </>
             )}

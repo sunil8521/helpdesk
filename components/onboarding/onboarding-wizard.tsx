@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { finishOnboardingAction } from "@/app/actions/onboarding";
-import {checkKnowledgeSourceStatusAction} from "@/app/actions/knowledge"
+import { checkKnowledgeSourceStatusAction } from "@/app/actions/knowledge"
 import { KnowledgeIngestionForm } from "@/components/knowledge/knowledge-ingestion-form";
 import { cn } from "@/lib/utils";
 import { STEPS, AGENT_TEMPLATES, AVATAR_OPTIONS, COLOR_SWATCHES } from "./constants";
@@ -94,7 +94,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
   const formValues = watch();
 
   useEffect(() => {
-    const activeSources = uploadedSources.filter((s) => !s.status || (s.status !== "ready" && s.status !== "failed"));
+    const activeSources = uploadedSources.filter((s) => !s.status || (s.status !== "completed" && s.status !== "failed"));
     if (activeSources.length === 0) return;
 
     const intervalId = setInterval(async () => {
@@ -131,8 +131,13 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
   const activeTemplateObj = AGENT_TEMPLATES.find((t) => t.description === formValues.agentPrompt) || AGENT_TEMPLATES[0];
 
   const handleTemplateSelect = (tmpl: typeof AGENT_TEMPLATES[0]) => {
-    setValue("agentRole", tmpl.role);
-    setValue("agentPrompt", tmpl.description);
+    if (formValues.agentPrompt === tmpl.description) {
+      setValue("agentRole", "");
+      setValue("agentPrompt", "");
+    } else {
+      setValue("agentRole", tmpl.role);
+      setValue("agentPrompt", tmpl.description);
+    }
   };
 
   const handleNextStep = async () => {
@@ -140,7 +145,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
     if (stepIndex === 0) {
       fieldsToValidate = ["agentName", "agentRole", "agentPrompt"];
     } else if (stepIndex === 1) {
-      fieldsToValidate = ["avatarUrl", "tone", "responseLength"];
+      fieldsToValidate = ["avatarUrl", "tone", "  responseLength"];
     } else if (stepIndex === 2) {
       fieldsToValidate = ["greetingMsg", "themeColor", "position"];
     }
@@ -152,6 +157,19 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
   };
 
   const onSubmit = async (data: OnboardingFormValues) => {
+
+    // console.log({
+    //   agentName: data.agentName,
+    //   agentRole: data.agentRole,
+    //   agentPrompt: data.agentPrompt,
+    //   avatarUrl: data.avatarUrl,
+    //   tone: data.tone,
+    //   responseLength: data.responseLength,
+    //   greetingMsg: data.greetingMsg,
+    //   themeColor: data.themeColor,
+    //   position: data.position,
+    //   sourceIds: data.sourceIds,
+    // })
     setIsFinishing(true);
     try {
       await finishOnboardingAction({
@@ -176,15 +194,17 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
     }
   };
 
-  const [origin, setOrigin] = useState("http://localhost:3000");
+  const [origin, setOrigin] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setOrigin(window.location.origin);
+      setIsMounted(true);
     }
   }, []);
 
-  const scriptSnippet = `<script src="${origin}/widget.js" data-helpdesk-workspace-id="${workspaceId}" defer></script>`;
+  const scriptSnippet = `<script src="${isMounted ? origin : 'https://your-domain.com'}/widget.js" data-helpdesk-workspace-id="${workspaceId}" defer></script>`;
 
   const copyScript = () => {
     navigator.clipboard.writeText(scriptSnippet);
@@ -233,7 +253,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
               <div className="space-y-6 animate-in fade-in-50 duration-200">
                 <div className="space-y-3">
                   <Label className="text-[14px] font-semibold text-foreground/70">Select a pre-configured template</Label>
-                  <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {AGENT_TEMPLATES.map((tmpl) => {
                       const isSelected = formValues.agentPrompt === tmpl.description;
                       return (
@@ -260,6 +280,30 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
                         </button>
                       );
                     })}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValue("agentRole", "");
+                        setValue("agentPrompt", "");
+                      }}
+                      className={cn(
+                        "p-3.5 rounded-2xl border-2 hover:border-brand/50 text-left transition-all cursor-pointer flex flex-col justify-between group",
+                        (!formValues.agentPrompt || !AGENT_TEMPLATES.some(t => t.description === formValues.agentPrompt))
+                          ? "border-brand bg-brand/[0.04] ring-2 ring-brand/20 shadow-xs"
+                          : "border-border/60 bg-card"
+                      )}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[20px]">✨</span>
+                        {(!formValues.agentPrompt || !AGENT_TEMPLATES.some(t => t.description === formValues.agentPrompt)) && (
+                          <span className="h-5 w-5 rounded-full bg-brand text-white grid place-items-center text-[10px]">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 font-bold text-[13.5px] text-foreground">Custom AI</div>
+                    </button>
                   </div>
                 </div>
 
@@ -420,12 +464,13 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
 
                 <div className="space-y-3">
                   <Label className="text-[13.5px] font-semibold">Screen Position</Label>
+                  <input type="hidden" {...register("position")} />
                   <div className="grid grid-cols-2 gap-3">
                     {["right", "left"].map((pos) => (
                       <button
                         key={pos}
                         type="button"
-                        onClick={() => setValue("position", pos as any)}
+                        onClick={() => setValue("position", pos as any, { shouldValidate: true, shouldDirty: true })}
                         className={cn(
                           "p-4 rounded-2xl border-2 text-center font-bold text-[13.5px] uppercase tracking-wider transition-all cursor-pointer",
                           formValues.position === pos ? "border-brand bg-brand/[0.04] text-brand" : "border-border/60 bg-card text-foreground/70 hover:border-foreground/20"
@@ -443,42 +488,42 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
             {/* Step 3: Knowledge Base */}
             {stepIndex === 3 && (
               <div className="space-y-6 animate-in fade-in-50 duration-200">
-                  <div className="space-y-4">
-                    {/* Display Uploaded Sources */}
-                    {uploadedSources.length > 0 && (
-                      <div className="space-y-2 mb-6">
-                        <Label className="text-[13.5px] font-semibold">Added Sources ({uploadedSources.length})</Label>
-                        <div className="space-y-2">
-                          {uploadedSources.map((src, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-card text-[13px]">
-                              <div className="flex items-center gap-2">
-                                {src.type === "text" && <Sparkles className="h-4 w-4 text-emerald" />}
-                                {src.type === "url" && <LinkIcon className="h-4 w-4 text-amber" />}
-                                {src.type === "file" && <UploadCloud className="h-4 w-4 text-brand" />}
-                                <span className="font-medium truncate max-w-[200px]">{src.title}</span>
-                              </div>
-                              {src.status === "ready" ? (
-                                <div className="flex items-center gap-1.5 bg-emerald/10 text-emerald px-2 py-1 rounded-md">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  <span className="text-[11px] uppercase tracking-wider font-semibold">Ready</span>
-                                </div>
-                              ) : src.status === "failed" ? (
-                                <div className="flex items-center gap-1.5 bg-red-600/10 text-red-600 px-2 py-1 rounded-md">
-                                  <X className="h-3 w-3" />
-                                  <span className="text-[11px] uppercase tracking-wider font-semibold">Failed</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 bg-brand/10 text-brand px-2 py-1 rounded-md">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span className="text-[11px] uppercase tracking-wider font-semibold">Processing...</span>
-                                </div>
-                              )}
+                <div className="space-y-4">
+                  {/* Display Uploaded Sources */}
+                  {uploadedSources.length > 0 && (
+                    <div className="space-y-2 mb-6">
+                      <Label className="text-[13.5px] font-semibold">Added Sources ({uploadedSources.length})</Label>
+                      <div className="space-y-2">
+                        {uploadedSources.map((src, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-card text-[13px]">
+                            <div className="flex items-center gap-2">
+                              {src.type === "text" && <Sparkles className="h-4 w-4 text-emerald" />}
+                              {src.type === "url" && <LinkIcon className="h-4 w-4 text-amber" />}
+                              {src.type === "file" && <UploadCloud className="h-4 w-4 text-brand" />}
+                              <span className="font-medium truncate max-w-[200px]">{src.title}</span>
                             </div>
-                          ))}
-                        </div>
+                            {src.status === "completed" ? (
+                              <div className="flex items-center gap-1.5 bg-emerald/10 text-emerald px-2 py-1 rounded-md">
+                                <CheckCircle2 className="h-3 w-3" />
+                                <span className="text-[11px] uppercase tracking-wider font-semibold">Ready</span>
+                              </div>
+                            ) : src.status === "failed" ? (
+                              <div className="flex items-center gap-1.5 bg-red-600/10 text-red-600 px-2 py-1 rounded-md">
+                                <X className="h-3 w-3" />
+                                <span className="text-[11px] uppercase tracking-wider font-semibold">Failed</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 bg-brand/10 text-brand px-2 py-1 rounded-md">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <span className="text-[11px] uppercase tracking-wider font-semibold">Processing...</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    )}
-                    
+                    </div>
+                  )}
+
                   <div className="mt-8">
                     <KnowledgeIngestionForm
                       workspaceId={workspaceId}
@@ -528,14 +573,13 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
             <span className="h-2 w-2 rounded-full bg-emerald animate-pulse" /> Live Agent Preview
           </div>
           <WidgetPreview
-            title={formValues.agentName || "Agent Name"}
-            agentName={formValues.agentName || "Agent"}
-            agentRole={formValues.agentRole || "Support"}
-            avatarUrl={formValues.avatarUrl || "https://api.dicebear.com/10.x/open-peeps/svg?seed=fallback"}
-            greeting={formValues.greetingMsg || "Hello! How can I help?"}
-            themeColor={formValues.themeColor || "#4f46e5"}
-            buttonColor={formValues.themeColor || "#4f46e5"}
-            quickPrompts={activeTemplateObj.prompts}
+            title={formValues.agentName}
+            agentName={formValues.agentName}
+            agentRole={formValues.agentRole}
+            avatarUrl={formValues.avatarUrl}
+            greeting={formValues.greetingMsg}
+            themeColor={formValues.themeColor}
+            buttonColor={formValues.themeColor}
           />
         </div>
       </div>
