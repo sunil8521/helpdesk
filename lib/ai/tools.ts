@@ -97,10 +97,10 @@ export const searchKnowledgeBaseTool = new DynamicStructuredTool({
       const matches = await searchWorkspaceVectorsWithScores(workspaceId, query, 4);
       const confidence = matches[0]?.[1] ?? 0;
 
-      // console.log("confidence" , confidence)
-      // console.log("threshold" , threshold)
-      // console.log("falallslsla" , fallbackBehavior)
-      // console.log("RETRIEVED TEXT CHUNKS:", matches.map(m => m[0].pageContent));
+      console.log("confidence" , confidence)
+      console.log("threshold" , threshold)
+      console.log("falallslsla" , fallbackBehavior)
+      console.log("RETRIEVED TEXT CHUNKS:", matches.map(m => m[0].pageContent));
 
       if (matches.length === 0) {
         return JSON.stringify({
