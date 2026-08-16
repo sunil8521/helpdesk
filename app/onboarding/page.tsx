@@ -62,7 +62,7 @@ async function OnboardingPageContent() {
   return (
     <div className="min-h-screen bg-[oklch(0.985_0.003_260)] flex flex-col selection:bg-brand/20">
       {/* ── Top Header matching Landing Page header dimensions & style ── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/40">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-border/40">
         <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 h-[68px] sm:h-[72px] flex items-center justify-between">
           <Link href="/" className="shrink-0"><HelpdeskLogo /></Link>
 

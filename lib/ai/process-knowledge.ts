@@ -104,7 +104,7 @@ export async function processKnowledgeSource(
           // }
         }
       }
-      console.log(rawText)
+      // console.log(rawText)
       if (!rawText.trim()) {
         throw new Error("No content found to process");
       }
