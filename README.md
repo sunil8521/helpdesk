@@ -4,6 +4,12 @@
 
 ---
 
+## 🏗️ Architecture
+
+*To update this diagram, open `.excalidraw` in VSCode and export it as `architecture.png` to the root folder.*
+
+---
+
 ## ✨ Features
 
 ### 🤖 AI Agent

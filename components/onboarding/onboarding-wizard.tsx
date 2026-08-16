@@ -81,7 +81,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
       agentName: "",
       agentRole: "",
       agentPrompt: "",
-      avatarUrl: AVATAR_OPTIONS[0]?.url || "https://api.dicebear.com/10.x/open-peeps/svg?seed=Maya",
+      avatarUrl: AVATAR_OPTIONS[0]?.url,
       tone: "Friendly",
       responseLength: "Minimalist",
       greetingMsg: "Hi 👋 How can we help today?",
@@ -128,7 +128,6 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
     return () => clearInterval(intervalId);
   }, [uploadedSources]);
 
-  const activeTemplateObj = AGENT_TEMPLATES.find((t) => t.description === formValues.agentPrompt) || AGENT_TEMPLATES[0];
 
   const handleTemplateSelect = (tmpl: typeof AGENT_TEMPLATES[0]) => {
     if (formValues.agentPrompt === tmpl.description) {
@@ -145,7 +144,7 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
     if (stepIndex === 0) {
       fieldsToValidate = ["agentName", "agentRole", "agentPrompt"];
     } else if (stepIndex === 1) {
-      fieldsToValidate = ["avatarUrl", "tone", "  responseLength"];
+      fieldsToValidate = ["avatarUrl", "tone", "responseLength"];
     } else if (stepIndex === 2) {
       fieldsToValidate = ["greetingMsg", "themeColor", "position"];
     }
@@ -194,17 +193,9 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
     }
   };
 
-  const [origin, setOrigin] = useState("");
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-      setIsMounted(true);
-    }
-  }, []);
-
-  const scriptSnippet = `<script src="${isMounted ? origin : 'https://your-domain.com'}/widget.js" data-helpdesk-workspace-id="${workspaceId}" defer></script>`;
+  const backendUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const scriptUrl = process.env.NEXT_PUBLIC_WIDGET_SCRIPT_URL;
+  const scriptSnippet = `<script src="${scriptUrl}" data-helpdesk-workspace-id="${workspaceId}" data-backend-url="${backendUrl}" defer></script>`;
 
   const copyScript = () => {
     navigator.clipboard.writeText(scriptSnippet);
@@ -644,7 +635,6 @@ export function OnboardingWizard({ workspaceId }: OnboardingWizardProps) {
               greeting={formValues.greetingMsg || "Hello! How can I help?"}
               themeColor={formValues.themeColor || "#4f46e5"}
               buttonColor={formValues.themeColor || "#4f46e5"}
-              quickPrompts={activeTemplateObj.prompts}
             />
 
             <Button

@@ -9,8 +9,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 const R2_ENDPOINT = process.env.R2_ENDPOINT;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "javarag";
-const R2_FOLDER_PREFIX = process.env.R2_FOLDER_PREFIX || "helpdesk";
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
+const R2_FOLDER_PREFIX = process.env.R2_FOLDER_PREFIX;
 
 if (!R2_ENDPOINT || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
   console.warn("Cloudflare R2 environment variables are missing in .env.local");
@@ -70,9 +70,7 @@ export async function getPresignedUploadUrl({
   };
 }
 
-/**
- * Deletes an object from Cloudflare R2 by key.
- */
+
 export async function deleteFromR2(objectKey: string) {
   const command = new DeleteObjectCommand({
     Bucket: R2_BUCKET_NAME,
@@ -83,9 +81,7 @@ export async function deleteFromR2(objectKey: string) {
   return true;
 }
 
-/**
- * Generates the accessible public URL for a given Cloudflare R2 key.
- */
+
 export function getR2PublicUrl(objectKey: string): string {
   if (!objectKey) return "";
   if (objectKey.startsWith("http://") || objectKey.startsWith("https://")) {

@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   cacheComponents: true,
-  serverExternalPackages: ["socket.io"],
+  serverExternalPackages: ["socket.io", "pdf-parse", "pdfjs-dist"],
 };
 
 export default nextConfig;

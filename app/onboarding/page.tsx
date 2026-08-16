@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react";
 
 export default function OnboardingPage() {
   return (
-    <Suspense 
+    <Suspense
       fallback={
         <div className="min-h-screen flex flex-col items-center justify-center bg-[oklch(0.985_0.003_260)] font-sans">
           <Loader2 className="h-10 w-10 animate-spin text-brand mb-4" />

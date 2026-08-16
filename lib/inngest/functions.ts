@@ -7,11 +7,7 @@ import {
 } from "@/lib/ai/process-knowledge";
 import { scrapeUrlWithScrapeDo } from "@/lib/scraper";
 
-/**
- * Process URL knowledge source.
- * Scrapes the URL via Scrape.do, uploads markdown to R2,
- * and then embeds it directly inside a single reliable pipeline.
- */
+
 export const processUrlKnowledge = inngest.createFunction(
   {
     id: "process-url-knowledge",
@@ -27,12 +23,10 @@ export const processUrlKnowledge = inngest.createFunction(
       return { success: false, error: "Invalid URL source" };
     }
 
-    // Step 1: Scrape the URL via Scrape.do
     const scraped = await step.run("scrape-url", async () => {
       return scrapeUrlWithScrapeDo(source.webUrl!);
     });
 
-    // Step 2: Upload scraped markdown to R2 and update MongoDB
     await step.run("upload-to-r2", async () => {
       await uploadScrapedContentToR2({
         sourceId,
@@ -51,11 +45,7 @@ export const processUrlKnowledge = inngest.createFunction(
   }
 );
 
-/**
- * Process a knowledge source (text, file, or url).
- * Triggered by the final onboarding submission.
- * Extracts, chunks, embeds, and stores in vector DB.
- */
+
 export const processSourceKnowledge = inngest.createFunction(
   {
     id: "process-source-knowledge",
@@ -73,10 +63,6 @@ export const processSourceKnowledge = inngest.createFunction(
   }
 );
 
-/**
- * Retry a failed knowledge source.
- * Re-runs the appropriate pipeline based on sourceType.
- */
 export const retryKnowledgeSource = inngest.createFunction(
   {
     id: "retry-knowledge-source",
@@ -123,7 +109,6 @@ export const retryKnowledgeSource = inngest.createFunction(
   }
 );
 
-/** All Inngest functions to register with the serve handler */
 export const inngestFunctions = [
   processUrlKnowledge,
   processSourceKnowledge,

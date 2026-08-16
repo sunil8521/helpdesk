@@ -9,9 +9,7 @@
   }
 
   const workspaceId = script.getAttribute("data-workspace-id") || script.getAttribute("data-helpdesk-workspace-id");
-  const userEmail = script.getAttribute("data-user-email");
-  const userName = script.getAttribute("data-user-name");
-  const baseUrl = new URL(script.src).origin;
+  const baseUrl = script.getAttribute("data-backend-url") || new URL(script.src).origin;
 
   // 2. Inject responsive widget wrapper container
   const container = document.createElement("div");
@@ -34,8 +32,6 @@
   const iframe = document.createElement("iframe");
   
   let iframeUrl = `${baseUrl}/widget/embed?workspaceId=${workspaceId}`;
-  if (userEmail) iframeUrl += `&email=${encodeURIComponent(userEmail)}`;
-  if (userName) iframeUrl += `&name=${encodeURIComponent(userName)}`;
   
   iframe.src = iframeUrl;
   Object.assign(iframe.style, {
@@ -46,6 +42,74 @@
     background: "transparent",
   });
 
+  // Add Loader Spinner
+  const loader = document.createElement("div");
+  Object.assign(loader.style, {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "transparent",
+    borderRadius: "50%",
+    transition: "opacity 0.5s ease",
+    zIndex: "5"
+  });
+
+  const style = document.createElement("style");
+  style.textContent = `
+    .spinner {
+      position: relative;
+      width: 9px;
+      height: 9px;
+    }
+
+    .spinner div {
+      position: absolute;
+      width: 50%;
+      height: 150%;
+      background: #005CB5;
+      transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1%));
+      animation: spinner-fzua35 1s calc(var(--delay) * 1s) infinite ease;
+    }
+
+    .spinner div:nth-child(1) { --delay: 0.1; --rotation: 36; --translation: 150; }
+    .spinner div:nth-child(2) { --delay: 0.2; --rotation: 72; --translation: 150; }
+    .spinner div:nth-child(3) { --delay: 0.3; --rotation: 108; --translation: 150; }
+    .spinner div:nth-child(4) { --delay: 0.4; --rotation: 144; --translation: 150; }
+    .spinner div:nth-child(5) { --delay: 0.5; --rotation: 180; --translation: 150; }
+    .spinner div:nth-child(6) { --delay: 0.6; --rotation: 216; --translation: 150; }
+    .spinner div:nth-child(7) { --delay: 0.7; --rotation: 252; --translation: 150; }
+    .spinner div:nth-child(8) { --delay: 0.8; --rotation: 288; --translation: 150; }
+    .spinner div:nth-child(9) { --delay: 0.9; --rotation: 324; --translation: 150; }
+    .spinner div:nth-child(10) { --delay: 1; --rotation: 360; --translation: 150; }
+
+    @keyframes spinner-fzua35 {
+      0%, 10%, 20%, 30%, 50%, 60%, 70%, 80%, 90%, 100% {
+        transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1%));
+      }
+      50% {
+        transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1.5%));
+      }
+    }
+  `;
+  document.head.appendChild(style);
+  loader.innerHTML = `
+    <div class="spinner">
+      <div></div><div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div><div></div>
+    </div>
+  `;
+
+  iframe.onload = () => {
+    loader.style.opacity = "0";
+    setTimeout(() => loader.remove(), 500);
+  };
+
+  container.appendChild(loader);
   container.appendChild(iframe);
   document.body.appendChild(container);
 
@@ -71,7 +135,7 @@
         container.style.width = "80px";
         container.style.height = "80px";
         container.style.borderRadius = "50%";
-        iframe.style.borderRadius = "24px"; // internal iframe border radius doesn't matter much when container clips or is transparent
+        iframe.style.borderRadius = "24px"; 
         container.style.boxShadow = "none";
       }
 

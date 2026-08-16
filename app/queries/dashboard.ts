@@ -64,7 +64,7 @@ export async function getDashboardStats(workspaceId: string) {
     }
 
     const avgResponseMs = responseCount > 0 ? Math.floor(totalWaitTimeMs / responseCount) : 0;
-    const avgResponseTimeFormatted = responseCount > 0 ? formatDuration(avgResponseMs) : "—";
+    const avgResponseTimeFormatted = responseCount > 0 ? formatDuration(avgResponseMs) : "0s";
 
     return {
       success: true,
@@ -78,7 +78,7 @@ export async function getDashboardStats(workspaceId: string) {
       success: false,
       totalConversations: 0,
       humanHandoffs: 0,
-      avgResponseTimeFormatted: "—",
+      avgResponseTimeFormatted: "0",
     };
   }
 }

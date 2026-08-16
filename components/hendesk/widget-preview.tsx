@@ -15,7 +15,6 @@ interface Props {
   position?: "bottom-right" | "bottom-left" | "right" | "left";
   className?: string;
   compact?: boolean;
-  quickPrompts?: string[];
   initialFaqs?: any[];
 }
 

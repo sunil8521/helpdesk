@@ -5,6 +5,14 @@ import { getVectorStore } from "./vector-store";
 import { createChunks } from "./chunker";
 import { r2Client, getR2PublicUrl } from "@/lib/r2";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { CSVLoader } from "@langchain/community/document_loaders/fs/csv";
+import { DocxLoader } from "@langchain/community/document_loaders/fs/docx";
+import { PDFParse } from "pdf-parse";
+
+// import pc from "picocolors";
+
+
+
 
 
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!;
@@ -53,7 +61,6 @@ export async function processKnowledgeSource(
       if (source.sourceType === "text") {
         rawText = source.rawText || "";
       } else if (source.sourceType === "url" || source.sourceType === "file") {
-        // For url and file sources, fetch from R2
         if (source.r2Key) {
           const r2Response = await r2Client.send(
             new GetObjectCommand({
@@ -61,13 +68,48 @@ export async function processKnowledgeSource(
               Key: source.r2Key,
             })
           );
-          rawText = (await r2Response.Body?.transformToString("utf-8")) || "";
+
+          const buffer = await r2Response.Body?.transformToByteArray();
+          if (!buffer) throw new Error("No data received from R2");
+
+          const ext = source.r2Key.split('.').pop()?.toLowerCase();
+
+          if (ext === "pdf" || source.mimeType === "application/pdf") {
+            const parser = new PDFParse({
+              data: new Uint8Array(buffer),
+            });
+            try {
+              const { pages } = await parser.getText();
+              rawText = pages.map((page: any) => page.text).join("\n");
+            } finally {
+              await parser.destroy();
+            }
+          }
+          else if (ext === "docx" || source.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+            const blob = new Blob([buffer as any]);
+            const loader = new DocxLoader(blob);
+            const docs = await loader.load();
+            rawText = docs.map(d => d.pageContent).join("\n");
+          }
+          else if (ext === "csv" || source.mimeType === "text/csv") {
+            const blob = new Blob([buffer as any], { type: "text/csv" });
+            const docs = await new CSVLoader(blob).load();
+            rawText = docs.map(d => d.pageContent).join("\n");
+          }
+          else if (["md", "txt"].includes(ext || "") || source.mimeType?.startsWith("text/")) {
+            rawText = Buffer.from(buffer).toString("utf-8");
+          }
+          // else {
+          //   rawText = Buffer.from(buffer).toString("utf-8");
+          // }
         }
       }
+      console.log(rawText)
       if (!rawText.trim()) {
         throw new Error("No content found to process");
       }
     } catch (e: any) {
+      // console.log(pc.red(e))
       throw new Error(`[parse error] ${e.message}`);
     }
 
@@ -102,11 +144,9 @@ export async function processKnowledgeSource(
       return chunk;
     });
 
-    // Embed + store in MongoDB Atlas Vector Search
     const vectorStore = await getVectorStore();
     await vectorStore.addDocuments(indexedChunks);
 
-    // Update KnowledgeSource status
     await KnowledgeSource.findByIdAndUpdate(sourceId, {
       status: "completed",
       progress: 100,
@@ -130,9 +170,7 @@ export async function processKnowledgeSource(
   }
 }
 
-/**
- * Upload scraped markdown to R2 and update the KnowledgeSource record.
- */
+
 export async function uploadScrapedContentToR2(params: {
   sourceId: string;
   workspaceId: string;

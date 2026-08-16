@@ -18,6 +18,8 @@ import type {
   SocketData,
   SocketMessage,
 } from "./socket-events";
+import { getCompiledGraph } from "@/lib/ai/graph";
+import { SystemMessage } from "@langchain/core/messages";
 
 // Singleton reference
 let io: SocketIOServer<
@@ -51,11 +53,6 @@ function serializeMessage(msg: any): SocketMessage {
 }
 
 async function updateAiSessionState(threadId: string, content: string) {
-  const [{ getCompiledGraph }, { SystemMessage }] = await Promise.all([
-    import("@/lib/ai/graph"),
-    import("@langchain/core/messages"),
-  ]);
-
   const graph = await getCompiledGraph();
   await graph.updateState(
     { configurable: { thread_id: threadId } },
@@ -107,9 +104,6 @@ async function emitListUpdate(conversationId: string) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Initialize Socket.IO
-// ---------------------------------------------------------------------------
 export function initSocketServer(httpServer: HTTPServer) {
   io = new SocketIOServer(httpServer, {
     cors: {
@@ -119,7 +113,6 @@ export function initSocketServer(httpServer: HTTPServer) {
     path: "/socket.io",
   });
 
-  // Auth middleware
   io.use(socketAuthMiddleware);
 
   io.on("connection", (socket) => {
@@ -130,9 +123,6 @@ export function initSocketServer(httpServer: HTTPServer) {
       `[Socket] Connected: ${isVisitor ? `visitor:${socket.data.visitorId}` : `agent:${socket.data.userId}`}`
     );
 
-    // -----------------------------------------------------------------------
-    // VISITOR: auto-join their conversation room
-    // -----------------------------------------------------------------------
     if (isVisitor && socket.data.conversationId) {
       socket.join(`conversation:${socket.data.conversationId}`);
       // Notify dashboard so newly escalated conversations appear in real-time
@@ -208,10 +198,7 @@ export function initSocketServer(httpServer: HTTPServer) {
       }
     });
 
-    // -----------------------------------------------------------------------
-    // agent:message:send — agent sends a reply
-    // Auto-claims if conversation is in waiting status
-    // -----------------------------------------------------------------------
+   
     socket.on(
       "agent:message:send",
       async ({ conversationId, clientMessageId, content }, ack) => {

@@ -127,15 +127,9 @@ export function WidgetClientView({
     }
   };
 
-  const [origin, setOrigin] = useState("http://localhost:3000");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
-  }, []);
-
-  const script = `<script src="${origin}/widget.js" data-helpdesk-workspace-id="${workspaceId}" defer></script>`;
+  const backendUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const scriptUrl = process.env.NEXT_PUBLIC_WIDGET_SCRIPT_URL;
+  const script = `<script src="${scriptUrl}" data-helpdesk-workspace-id="${workspaceId}" data-backend-url="${backendUrl}" defer></script>`;
 
   return (
     <div className="p-5 sm:p-8 lg:p-10 max-w-[1400px] mx-auto space-y-8 font-sans">

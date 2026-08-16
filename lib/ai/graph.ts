@@ -23,7 +23,7 @@ async function chatBot(state: typeof GraphState.State, config: RunnableConfig) {
     aiModel: string;
     temperature: number;
   }) | undefined;
-
+// console.log("agentPayload"+  agentPayload)
   const visitorSnapshot = config.configurable?.visitorSnapshot as {
     name: string;
     email: string;
@@ -37,6 +37,8 @@ async function chatBot(state: typeof GraphState.State, config: RunnableConfig) {
   const allowedTools = agentPayload.humanFallbackBehavior === "cannot"
     ? allTools.filter(t => t.name !== "escalate_to_human")
     : allTools;
+
+  // console.log("allowedTools: ", allowedTools.map(t => t.name));
   const llmWithTools = llm.bindTools(allowedTools);
 
   const visitorName = visitorSnapshot?.name || "Anonymous";
@@ -48,7 +50,7 @@ async function chatBot(state: typeof GraphState.State, config: RunnableConfig) {
       visitor: { name: visitorName, email: visitorEmail },
     })
   );
-
+// console.log(dynamicSystemPrompt)
   const response = await llmWithTools.invoke([dynamicSystemPrompt, ...state.messages], config);
   return { messages: [response] };
 }

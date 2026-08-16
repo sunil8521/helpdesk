@@ -97,15 +97,36 @@ export const searchKnowledgeBaseTool = new DynamicStructuredTool({
       const matches = await searchWorkspaceVectorsWithScores(workspaceId, query, 4);
       const confidence = matches[0]?.[1] ?? 0;
 
-      if (matches.length === 0 || confidence < threshold) {
+      // console.log("confidence" , confidence)
+      // console.log("threshold" , threshold)
+      // console.log("falallslsla" , fallbackBehavior)
+      // console.log("RETRIEVED TEXT CHUNKS:", matches.map(m => m[0].pageContent));
+
+      if (matches.length === 0) {
         return JSON.stringify({
           source: "knowledge_base",
           retrieval: {
-            status: matches.length === 0 ? "no_results" : "below_threshold",
-            confidence: Number(confidence.toFixed(4)),
+            status: "no_results",
+            confidence: 0,
             threshold,
           },
           note: "No relevant business knowledge found for this query. If this was a business question, please follow your fallback instructions. If this was just casual chat, respond naturally.",
+        });
+      }
+
+      if (confidence < threshold) {
+        return JSON.stringify({
+          source: "knowledge_base",
+          retrieval: {
+            status: "below_threshold",
+            confidence: Number(confidence.toFixed(4)),
+            threshold,
+          },
+          results: matches.map(([document]) => ({
+            content: document.pageContent,
+            metadata: document.metadata,
+          })),
+          note: "The retrieved knowledge has low confidence. Follow your instructions for below-threshold results.",
         });
       }
 

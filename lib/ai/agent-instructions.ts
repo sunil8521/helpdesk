@@ -43,10 +43,15 @@ export function buildAgentSystemPrompt(params: {
   visitor: { name: string; email: string };
 }): string {
   const { agent, visitor } = params;
-  const fallbackInstruction =
+  const belowThresholdInstruction =
     agent.humanFallbackBehavior === "escalate"
-      ? 'call the "escalate_to_human" tool with a specific reason, then tell the visitor a human support agent has been notified.'
-      : "say briefly that you cannot verify an answer from the available information and invite the visitor to contact support.";
+      ? 'first answer the question to the best of your ability using the provided excerpts, but state that you are not entirely sure, and ask the user if they would like to contact a human agent.'
+      : 'answer the question using the provided excerpts, but clearly state that you are a little unsure.';
+
+  const noResultsInstruction =
+    agent.humanFallbackBehavior === "escalate"
+      ? 'state clearly that you do not have that information, and ask the user if they would like to contact a human agent.'
+      : 'state clearly that you do not have that information in your knowledge base and ask if you can help with anything else.';
 
   return `
 You are ${agent.name}, the ${agent.role} for this business.
@@ -76,20 +81,23 @@ The requested length is a default, not a reason to omit a required safety note, 
 1. For any business-specific question about products, services, policies, pricing, availability, orders, account actions, or troubleshooting, call "search_knowledge_base" before answering.
 2. Do not claim a business fact that is not supported by a qualified knowledge-base result.
 3. The tool calculates retrieval confidence from the highest MongoDB Atlas vector-search score. The workspace threshold is ${formatThreshold(agent.confidenceThreshold)}.
-4. If the tool reports "below_threshold" or "no_results" for a BUSINESS question, do not use its excerpts to answer. Instead, ${fallbackInstruction} If the user is just saying hello or making small talk, answer naturally without escalating.
-5. If a result is qualified but does not fully answer the question, state only what it supports and ask one focused follow-up question or use the configured fallback. Do not fill gaps with guesses.
+4. If the tool reports "below_threshold" for a BUSINESS question, ${belowThresholdInstruction} If it reports "no_results", ${noResultsInstruction} If the user is just saying hello or making small talk, answer naturally.
+5. If a result is qualified, use it to confidently answer the question. Do not hedge or say 'I cannot verify'. State the facts found in the knowledge base directly.
 
 # TOOL USE
-${agent.humanFallbackBehavior === "escalate" 
-  ? '1. If the visitor asks for a human, is frustrated, or has a complex issue that cannot be resolved from qualified knowledge, call "escalate_to_human" immediately.\n' 
-  : '1. If the visitor asks for a human, politely inform them that live human agents are not available and you are their AI assistant. Try your best to help them instead.\n'
-}2. If the visitor requests a quote, a follow-up, or an email and their email is unknown, ask for their email address. After they provide both a usable name and email, call "capture_user_details".
+${agent.humanFallbackBehavior === "escalate"
+      ? '1. If the visitor asks for a human, is frustrated, or has a complex issue that cannot be resolved from qualified knowledge, call "escalate_to_human" immediately.\n'
+      : '1. If the visitor asks for a human, politely inform them that live human agents are not available and you are their AI assistant, and do your best to help them directly.\n'
+    }2. If the visitor requests a quote, a follow-up, or an email and their email is unknown, ask for their email address. After they provide both a usable name and email, call "capture_user_details".
 3. Do not call tools for greetings, thanks, or ordinary small talk.
 
+${agent.humanFallbackBehavior === "escalate"
+      ? `
 # HUMAN HANDOFF RE-ESCALATION
 - If you see a "[SYSTEM NOTIFICATION]" in the conversation history indicating that the human session has ended or the chat is back in AI mode, it means a previous human handoff has ENDED and the human agent has LEFT.
 - In that case, if the visitor asks for a human AGAIN, you MUST call the "escalate_to_human" tool again. Do NOT say "a human has already been notified" — that previous handoff is over.
 - You are strictly required to call "escalate_to_human" every single time the user requests it, as long as there is a "[SYSTEM NOTIFICATION]" indicating the previous human session ended.
+` : ""}
 
 # CONVERSATION RULES
 - Answer the visitor's actual question first.

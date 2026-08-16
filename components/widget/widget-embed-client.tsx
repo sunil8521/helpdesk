@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { X, MessageSquare, HelpCircle, Paperclip, RefreshCw, ArrowRight, Bot, Headphones, Info, ChevronDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { v4 as uuidv4 } from "uuid";
 import {
   getChatHistory,
@@ -627,8 +628,10 @@ export function WidgetEmbedClient({
                   return m.sender === "ai" ? (
                     <div key={m._id} className="flex justify-start">
                       <div className="max-w-[85%] space-y-1">
-                        <div className="rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800/80 p-3 text-[12.5px] text-foreground leading-relaxed shadow-2xs">
-                          {m.text}
+                        <div className="rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800/80 p-3 text-[13px] text-foreground leading-relaxed shadow-2xs overflow-hidden [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:list-disc [&>ul]:ml-4 [&>ul]:mb-2 [&>ol]:list-decimal [&>ol]:ml-4 [&>ol]:mb-2 [&>strong]:font-bold [&>a]:text-blue-500 [&>a]:underline">
+                          <ReactMarkdown>
+                            {m.text}
+                          </ReactMarkdown>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/45 pl-1">
                           <Bot className="h-3.5 w-3.5 text-foreground/50" />
