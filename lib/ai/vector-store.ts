@@ -18,10 +18,7 @@ async function getMongoClient(): Promise<MongoClient> {
   return cachedClient;
 }
 
-/**
- * Returns a MongoDBAtlasVectorSearch instance for the given workspace.
- * All documents store workspaceId at the root level for tenant isolation.
- */
+
 export async function getVectorStore() {
   const client = await getMongoClient();
   const collection = client.db(DB_NAME).collection(COLLECTION_NAME);
