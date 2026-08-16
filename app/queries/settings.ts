@@ -4,6 +4,8 @@ import { Workspace, IWorkspace } from "@/lib/db/models/Workspace";
 import { Agent, IAgent } from "@/lib/db/models/Agent";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 
+import { redirect } from "next/navigation";
+
 // Fetch workspace and AI agent settings for the logged-in user
 export async function getWorkspaceAndAgentSettings() {
   const ctx = await resolveUserWorkspace();

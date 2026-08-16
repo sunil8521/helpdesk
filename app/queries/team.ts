@@ -26,6 +26,7 @@ export async function getTeamMembers() {
     const data = await fetchTeamMembersCached(ctx.workspace._id.toString(), ctx.workspace.name);
     return { ...data, role: ctx.role };
   } catch (err: any) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return {
       success: false,
       error: err?.message || "Failed to fetch team members",

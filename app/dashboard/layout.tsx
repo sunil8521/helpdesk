@@ -8,6 +8,7 @@ import { Workspace } from "@/lib/db/models/Workspace";
 import { WorkspaceMember } from "@/lib/db/models/WorkspaceMember";
 import { StoreProvider } from "@/store/store-provider";
 import { DashboardShell } from "@/components/hendesk/dashboard-shell";
+import { ForceSignOut } from "@/components/auth/force-sign-out";
 
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
@@ -46,6 +47,10 @@ async function DashboardDataProvider({ children }: { children: React.ReactNode }
     name: session.user.name || "",
     avatarUrl: session.user.image || "",
   };
+
+  if (!activeWorkspace) {
+    return <ForceSignOut />;
+  }
 
   let inboxCount = 0;
   if (activeWorkspace) {
