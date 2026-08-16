@@ -163,11 +163,7 @@ export function WidgetEmbedClient({
 
         setConversationId(ticketResult.conversationId);
 
-        const socketUrl = process.env.NODE_ENV === "production" 
-          ? window.location.origin 
-          : (process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin);
-
-        const socket: TypedSocket = io(socketUrl, {
+        const socket: TypedSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
           auth: { token: ticketResult.ticket, clientType: "visitor" },
           transports: ["websocket", "polling"],
           reconnection: true,
