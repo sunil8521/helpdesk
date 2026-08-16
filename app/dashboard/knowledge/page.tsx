@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 import { getKnowledgeSources } from "@/app/queries/knowledge";
 import { KnowledgeClientView } from "@/components/knowledge/knowledge-client-view";
+
+export const metadata = { title: "Knowledge Base" };
 import { KnowledgeQuickAdd } from "@/components/knowledge/knowledge-quick-add";
 
 function KnowledgeSkeleton() {

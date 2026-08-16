@@ -7,7 +7,7 @@ import { Users } from "lucide-react";
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Leads | Helpdesk",
+  title: "Leads",
   description: "View captured leads and visitors",
 };
 

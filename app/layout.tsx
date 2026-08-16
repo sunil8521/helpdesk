@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Helpdesk — AI Support for WordPress, Wix & Webflow",
+  title: {
+    template: "%s | Helpdesk",
+    default: "Helpdesk | AI Support for WordPress, Wix & Webflow",
+  },
   description: "Add a smart AI chat widget to your website. Answer customers from your knowledge base. Hand off to human agents when needed.",
 };
 

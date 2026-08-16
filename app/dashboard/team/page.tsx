@@ -4,7 +4,7 @@ import { TeamClientView } from "@/components/team/team-client-view";
 import { TeamSkeleton } from "@/components/team/team-skeleton";
 
 export const metadata = {
-  title: "Team & Permissions | Helpdesk",
+  title: "Team & Permissions",
   description: "Manage team members, roles, and handoff permissions.",
 };
 

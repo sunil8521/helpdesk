@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { resolveUserWorkspace } from "@/lib/auth/resolve-context";
 
 export const metadata = {
-  title: "Widget Customization | Helpdesk",
+  title: "Widget Customization",
   description: "Customize and embed your Helpdesk AI widget",
 };
 

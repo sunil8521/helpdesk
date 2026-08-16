@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { getWorkspaceAndAgentSettings } from "@/app/queries/settings";
 import { SettingsClientForm } from "@/components/settings/settings-client-form";
 
+export const metadata = { title: "Settings" };
+
 function SettingsSkeleton() {
   return (
     <div className="space-y-8 animate-pulse font-sans">
